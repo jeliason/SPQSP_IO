@@ -156,6 +156,8 @@ void NSCLC_Core::timeSlice(const long slice){
 	
 	const double dt = params.getVal(NSCLC::PARAM_SEC_PER_TIME_SLICE);
 	const double t0 = slice * dt;
+	std::cout << "t0 (days): " << t0 / 60 / 60 / 24 << std::endl;
+
 	// std::cout << "RNG check (" << slice << ") START : " << rng.get_unif_01() << std::endl;
 
 	/* update cancer number and blood concentration */
@@ -163,7 +165,7 @@ void NSCLC_Core::timeSlice(const long slice){
 	double lymphCC = qsp_var[NSCLC::LymphCentral::QSPEX_TUM_C];
 
 	/* if QSP halted, skip*/
-	std::cout << "lymph CC: " << lymphCC << std::endl;
+	// std::cout << "lymph CC: " << lymphCC << std::endl;
 	//double abm_min_cc = params.getVal(NSCLC::PARAM_C1_MIN);
 	//if (lymphCC > abm_min_cc)
 	{
@@ -175,7 +177,7 @@ void NSCLC_Core::timeSlice(const long slice){
 			ptumor->update_abm_with_qsp(qsp_var);
 		}
 
-		std::cout << "nivo: " << qsp_var[3] << std::endl;
+		// std::cout << "nivo: " << qsp_var[3] << std::endl;
 
 		/*
 		for (auto& v : qsp_var)
@@ -237,8 +239,8 @@ void NSCLC_Core::timeSlice(const long slice){
 		double abm_scaler_margin = (1 - w) / w * lymphCC / (tumCC_margin  + abm_min_cc) * fraction_margin;
 		*/
 
-		std::cout << "scalor:\n" << "core:" << abm_scaler_core 
-			<< "\nmargin: " << abm_scaler_margin << std::endl;
+		// std::cout << "scalor:\n" << "core:" << abm_scaler_core 
+			// << "\nmargin: " << abm_scaler_margin << std::endl;
 
 		for (size_t i = 0; i < abm_var_len; i++)
 		{
@@ -341,7 +343,7 @@ void NSCLC_Core::writeGrids(unsigned long slice, unsigned int option){
 		}
 		for (int i = 0; i < ic.getVal(IC_NUM_ROI_margin); i++)
 		{
-			std::string prefix = "cell_margin" + std::to_string(i) + "_";
+			std::string prefix = "cell_margin_" + std::to_string(i) + "_";
 			std::ofstream& snap = output_hub.getNewGridToSnapshotStream(slice, prefix);
 			snap << _ROI_margin[i]->compartment_cells_to_string();
 			snap.close();
@@ -359,7 +361,7 @@ void NSCLC_Core::writeGrids(unsigned long slice, unsigned int option){
 		}
 		for (int i = 0; i < ic.getVal(IC_NUM_ROI_margin); i++)
 		{
-			std::string prefix = "grid_margin" + std::to_string(i) + "_";
+			std::string prefix = "grid_margin_" + std::to_string(i) + "_";
 			std::ofstream&  snap = output_hub.getNewGridToSnapshotStream(slice, prefix);
 			snap << _ROI_margin[i]->printGridToFile();
 			snap.close();

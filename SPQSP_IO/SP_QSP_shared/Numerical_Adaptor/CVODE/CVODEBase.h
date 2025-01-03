@@ -10,7 +10,7 @@
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
 #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
-#include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
+#include <sundials/sundials_types.h>   /* defs. of sunrealtype, sunindextype      */
 
 
 
@@ -64,13 +64,13 @@ protected:
 	//! initial setup, prepare memory blocks for the solver
 	void setupCVODE();
 	//! pure virtual. Pass rhs function and initial conditions to solver, instantiated in derived class
-	virtual void initSolver(realtype t0) = 0;
+	virtual void initSolver(sunrealtype t0) = 0;
 	//! setup variables
 	virtual void setupVariables(void) = 0;
 	//! setup events 
 	virtual void setupEvents(void) = 0;
 	//! reset starting time and _y after model is already initialted
-	void resetSolver(realtype t0, realtype t1);
+	void resetSolver(sunrealtype t0, sunrealtype t1);
 	//! copy _species_var and save to _y
 	void restore_y();
 	//! copy _y and save to _species_var
@@ -78,15 +78,15 @@ protected:
 	//! update species that are not parf of lhs of ode
 	virtual void update_y_other(void) = 0;
 	//! evaluate one trigger component 
-    virtual bool triggerComponentEvaluate(int i, realtype t, bool curr) = 0;
+    virtual bool triggerComponentEvaluate(int i, sunrealtype t, bool curr) = 0;
 	//! update trigger conditions when root found
 	void updateTriggerComponentConditionsOnRoot(int* rootsFound);
 	//! update trigger conditions at time t, without root 
-	void updateTriggerComponentConditionsOnValue(realtype t);
+	void updateTriggerComponentConditionsOnValue(sunrealtype t);
 	//! evaluate event triggers
-	bool evaluateAllEvents(realtype t);
+	bool evaluateAllEvents(sunrealtype t);
 	//! resolve event assignments recursively
-	void resolveEvents(realtype t);
+	void resolveEvents(sunrealtype t);
 	//! reset trigger after evaluation
 	void resetEventTriggers();
 	//! reset transient trigger conditions to false
@@ -102,13 +102,13 @@ protected:
 	//! evaluate one event trigger
 	virtual bool eventEvaluate(int i) = 0;
 	//! execute one event
-	virtual bool eventExecution(int i, bool delay, realtype& dt) = 0;
+	virtual bool eventExecution(int i, bool delay, sunrealtype& dt) = 0;
 	//! get variable value with original unit
 	double getVarOriginalUnit(int i) const;
 	//! get unit conversion scalor
-	virtual realtype get_unit_conversion_species(int i) const = 0;
+	virtual sunrealtype get_unit_conversion_species(int i) const = 0;
 	//! get unit conversion scalor
-	virtual realtype get_unit_conversion_nspvar(int i) const = 0;
+	virtual sunrealtype get_unit_conversion_nspvar(int i) const = 0;
 	//! check if a variable is allowed to become negative
 	virtual bool allow_negative(int i) const {return true;};
 
@@ -138,7 +138,9 @@ protected:
 	int _nevent;
 
 	//! delayed events sorted vector
-	std::vector<std::pair <realtype, int> > _delayEvents;
+	std::vector<std::pair <sunrealtype, int> > _delayEvents;
+
+	SUNContext _sunctx;
 
 	//! SUNMatrix for linear solver 
 	SUNMatrix _A;
@@ -163,7 +165,7 @@ private:
 
 	bool freeMem();
 	//! get next t for potential discontinuity.
-	bool getNexTimeDisc(realtype& t);
+	bool getNexTimeDisc(sunrealtype& t);
 
 
 

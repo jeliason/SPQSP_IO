@@ -5,3 +5,9 @@
 *.tlog
 *.vcxproj
 SPQSP_IO/SP_QSP_shared/ABM_Base/ReadMe.txt
+.Rproj.user
+.DS_Store
+.Rhistory
+.vscode
+experiments
+*.Rproj

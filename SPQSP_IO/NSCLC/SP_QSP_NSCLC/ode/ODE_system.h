@@ -10,9 +10,9 @@ class ODE_system :
 {
 public:
     //! ODE right hand side
-    static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data);
+    static int f(sunrealtype t, N_Vector y, N_Vector ydot, void *user_data);
     //! Root finding (for events)
-    static int g(realtype t, N_Vector y, realtype *gout, void *user_data);
+    static int g(sunrealtype t, N_Vector y, sunrealtype *gout, void *user_data);
     static std::string getHeader();
     static void setup_class_parameters(Param& param);
 
@@ -46,17 +46,17 @@ public:
 protected:
     void setupVariables(void);
     void setupEvents(void);
-    void initSolver(realtype t0);
+    void initSolver(sunrealtype t0);
     void update_y_other(void);
-    bool triggerComponentEvaluate(int i, realtype t, bool curr);
+    bool triggerComponentEvaluate(int i, sunrealtype t, bool curr);
     //! evaluate one event trigger
     bool eventEvaluate(int i);
     //! execute one event
-    bool eventExecution(int i, bool delay, realtype& dt);
+    bool eventExecution(int i, bool delay, sunrealtype& dt);
     //! unit conversion factor for species (y and non-y)
-    realtype get_unit_conversion_species(int i) const;
+    sunrealtype get_unit_conversion_species(int i) const;
     //! unit conversion foactor for non-species variables
-    realtype get_unit_conversion_nspvar(int i) const;
+    sunrealtype get_unit_conversion_nspvar(int i) const;
 	bool allow_negative(int i)const{ return false; };
 private:
     friend class boost::serialization::access;

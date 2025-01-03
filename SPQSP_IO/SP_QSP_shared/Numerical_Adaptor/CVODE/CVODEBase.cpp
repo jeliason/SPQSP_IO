@@ -73,9 +73,9 @@ void CVODEBase::simOdeStep(double tStart, double tStep){
 
 	int flag;
 
-	realtype t = tStart;
-	realtype tEnd = tStart + tStep;
-	realtype t1 = tEnd;
+	sunrealtype t = tStart;
+	sunrealtype tEnd = tStart + tStep;
+	sunrealtype t1 = tEnd;
 
 	//std::cout << "beginning: " << t << ", " << tEnd << std::endl;
 
@@ -92,7 +92,7 @@ void CVODEBase::simOdeStep(double tStart, double tStep){
 		bool discontinuity = false;
 		t1 = tEnd;
 
-		realtype tNextDisc = 0;
+		sunrealtype tNextDisc = 0;
 		bool queueNotEmpty = getNexTimeDisc(tNextDisc);
 		//std::cout << "delayed execution time: " << tNextDisc 
 		//	<< ", delay: " << queueNotEmpty << std::endl;
@@ -136,7 +136,7 @@ void CVODEBase::simOdeStep(double tStart, double tStep){
 
 				//std::cout << "delay queue size: " << _delayEvents.size() << std::endl;
 				int eventToExecute = _delayEvents.back().second;
-				realtype ttemp;
+				sunrealtype ttemp;
 				bool delay = eventExecution(eventToExecute, true, ttemp);
 				_delayEvents.pop_back();
 				//std::cout << "delay queue size: " << _delayEvents.size() << std::endl;
@@ -168,7 +168,7 @@ void CVODEBase::simOdeStep(double tStart, double tStep){
 	//std::cout << "End of step:" << t << *this << std::endl;
 }
 
-void CVODEBase::resolveEvents(realtype t){
+void CVODEBase::resolveEvents(sunrealtype t){
 	bool discontinuity = true;
 	while (discontinuity){
 		updateTriggerComponentConditionsOnValue(t);
@@ -200,6 +200,8 @@ and linear solver.
 */
 void CVODEBase::setupCVODE(){
 
+	SUNContext_Create(SUN_COMM_NULL, &_sunctx);
+
 	bool res = true;
 
 	_neq = _species_var.size();
@@ -207,13 +209,13 @@ void CVODEBase::setupCVODE(){
 	try{
 		int flag;
 
-		_y = N_VNew_Serial(_neq);
+		_y = N_VNew_Serial(_neq,_sunctx);
 		check_flag((void *)_y, "N_VNew_Serial", 0);
 
 		//_abstol = N_VNew_Serial(_neq);
 		//check_flag((void *)_abstol, "N_VNew_Serial", 0);
 
-		_cvode_mem = CVodeCreate(CV_BDF);
+		_cvode_mem = CVodeCreate(CV_BDF,_sunctx);
 		check_flag((void *)_cvode_mem, "CVodeCreate", 0);
 
 		/* Call CVodeInit to initialize the integrator memory and specify the
@@ -238,11 +240,11 @@ void CVODEBase::setupCVODE(){
 		check_flag(&flag, "CVodeSVtolerances", 1);
 
 		/* Create dense SUNMatrix for use in linear solves */
-		_A = SUNDenseMatrix(_neq, _neq);
+		_A = SUNDenseMatrix(_neq, _neq,_sunctx);
 		check_flag(&flag, "SUNDenseMatrix", 1);
 
 		/* Create dense SUNLinearSolver object for use by CVode */
-		_LS = SUNLinSol_Dense(_y, _A);
+		_LS = SUNLinSol_Dense(_y, _A,_sunctx);
 		check_flag(&flag, "SUNLinSol_Dense", 1);
 
 		/* Call CVodeSetLinearSolver to attach the matrix and linear solver to CVode */
@@ -264,7 +266,7 @@ This can be:
 Time-associated trigger condition in one event used to be handled here.
 Now they are delt with in rootfinding function.
 */
-bool CVODEBase::getNexTimeDisc(realtype& t){
+bool CVODEBase::getNexTimeDisc(sunrealtype& t){
 	/**/
 	if (!_delayEvents.empty())
 	{
@@ -302,7 +304,7 @@ void CVODEBase::updateTriggerComponentConditionsOnRoot(int* rootsFound) {
 	return;
 }
 
-void CVODEBase::updateTriggerComponentConditionsOnValue(realtype t) {
+void CVODEBase::updateTriggerComponentConditionsOnValue(sunrealtype t) {
 	for (auto i = 0; i < _nroot; i++)
 	{
 		_trigger_element_satisfied[i] = triggerComponentEvaluate(i, t,
@@ -314,7 +316,7 @@ void CVODEBase::updateTriggerComponentConditionsOnValue(realtype t) {
 
 /* evaluate event triggers
 */
-bool CVODEBase::evaluateAllEvents(realtype t) {
+bool CVODEBase::evaluateAllEvents(sunrealtype t) {
 	// evaluate all events, check if they are up for execution.
 	//std::cout << "trigger evaluations: " << std::endl;
 	bool exec = false;
@@ -326,7 +328,7 @@ bool CVODEBase::evaluateAllEvents(realtype t) {
 		// only execute when evaluation result change from false to true
 		if (trigger && !_event_triggered[i])
 		{
-			realtype dt = 0;
+			sunrealtype dt = 0;
 			bool setDelay = eventExecution(i, false, dt);
 			/**/
 			if (setDelay)
@@ -476,7 +478,7 @@ reset start time and initial condition.
 \param [in] t0: start time
 \param [in] t1: end time
 */
-void CVODEBase::resetSolver(realtype t0, realtype t1){
+void CVODEBase::resetSolver(sunrealtype t0, sunrealtype t1){
 	int flag = 0;
 	restore_y();
 	flag = CVodeSetStopTime(_cvode_mem, t1);
@@ -508,8 +510,8 @@ void CVODEBase::save_y(){
 
 /*! get variable value with original unit
 */
-realtype CVODEBase::getVarOriginalUnit(int i) const{
-	realtype v = 0;
+sunrealtype CVODEBase::getVarOriginalUnit(int i) const{
+	sunrealtype v = 0;
 	if (i < _neq){
 		v = _species_var[i];
 	}
@@ -532,6 +534,9 @@ bool CVODEBase::freeMem(){
 
 	/* Free integrator memory */
 	CVodeFree(&_cvode_mem);
+
+	SUNContext_Free(&_sunctx);
+
 	return true;
 }
 /*!

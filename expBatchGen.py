@@ -62,7 +62,8 @@ import re
 import numpy as np
 import copy
 from scipy.stats import norm
-from pyDOE2 import lhs
+from scipy.stats.qmc import Sobol, LatinHypercube
+# from pyDOE2 import lhs
 
 master_value_pattern = re.compile('^\s*\{.*\}\s*$')
 value_range_pattern = re.compile('^\s*\[.*,.*\]\s*$')
@@ -360,7 +361,9 @@ class Param_Sampler:
     
     def _sample_param_lhs(self):
         (nr_exp, nr_param_sweep) = self.param_out_values.shape
-        lhd = lhs(nr_param_sweep, samples=nr_exp)
+        # lhd = lhs(nr_param_sweep, samples=nr_exp)
+        sampler = LatinHypercube(d=nr_param_sweep)
+        lhd = sampler.random(nr_exp)
         for i in range(nr_param_sweep):
             val = interpolate_0_1(lhd[:, i], self.sweep_arg[i], 
                 self.sweep_scale[i], self.sweep_dist[i]) 

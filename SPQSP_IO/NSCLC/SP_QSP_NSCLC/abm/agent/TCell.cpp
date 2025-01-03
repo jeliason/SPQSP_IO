@@ -307,7 +307,7 @@ void TCell::update_neighbor_PDL1(double PDL1){
 
 //! PD1_PDL1 bond in synapse, newton_raphson method
 double TCell::get_PD1_PDL1(double PDL1, double Nivo){
-	using namespace boost::math::tools;
+	// using namespace boost::math::tools;
 	double guess = 0;
 	double xmin = 0;
 	double xmax = 1;
@@ -336,7 +336,7 @@ double TCell::get_PD1_PDL1(double PDL1, double Nivo){
 	b1 = -2 * (T1 / T2 + 2 + 1 / T2 / k1 + Nivo*k2 / T2 / k1*(1 - 2 * k3 / k1));
 	c1 = 1 + 1 / k1 / T2 + Nivo*k2 / k1 / T2 + 2 * T1 / T2;
 
-	double root = newton_raphson_iterate(
+	double root = boost::math::tools::newton_raphson_iterate(
 		// lambda function:
 		[a, b, c, d, a1, b1, c1](const double g){ return std::make_pair(
 		a * g * g * g + b * g * g + c * g + d,

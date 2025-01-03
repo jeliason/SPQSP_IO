@@ -212,7 +212,7 @@ void Tumor::shift_adjust_center(void){
 		//std::cout << "Shifting: " << c << "," << c.length() << std::endl;
 		Coord3D c_zshift(0, 0, c.z);
 		shift_grid(c_zshift);
-		std::cout << "Shifting: " << c_zshift << std::endl;
+		// std::cout << "Shifting: " << c_zshift << std::endl;
 	}
 	return;
 }

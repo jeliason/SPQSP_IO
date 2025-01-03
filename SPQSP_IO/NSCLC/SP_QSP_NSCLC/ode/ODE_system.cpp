@@ -30,7 +30,7 @@ ODE_system::~ODE_system()
 {
 }
 
-void ODE_system::initSolver(realtype t){
+void ODE_system::initSolver(sunrealtype t){
 
     restore_y();
     int flag;
@@ -517,10 +517,10 @@ void ODE_system::setup_class_parameters(Param& param){
 
 void ODE_system::setupVariables(void){
 
-    _species_var = std::vector<realtype>(47, 0);
-    _nonspecies_var = std::vector<realtype>(5, 0);
+    _species_var = std::vector<sunrealtype>(47, 0);
+    _nonspecies_var = std::vector<sunrealtype>(5, 0);
     //species not part of ode left-hand side
-    _species_other =  std::vector<realtype>(8, 0);
+    _species_other =  std::vector<sunrealtype>(8, 0);
     
     return;
 }
@@ -714,9 +714,9 @@ void ODE_system::adjust_hybrid_variables(void){
 void ODE_system::setup_instance_tolerance(Param& param){
 
     //Tolerance
-    realtype reltol = PFILE(3);
-    realtype abstol_base = PFILE(4);
-    N_Vector abstol = N_VNew_Serial(_neq);
+    sunrealtype reltol = PFILE(3);
+    sunrealtype abstol_base = PFILE(4);
+    N_Vector abstol = N_VNew_Serial(_neq,_sunctx);
 
     for (size_t i = 0; i < 47; i++)
     {
@@ -731,8 +731,8 @@ void ODE_system::setup_instance_tolerance(Param& param){
 
 void ODE_system::eval_init_assignment(void){
     //Assignment Rules required before IA
-    realtype AUX_VAR_T_all_Tum = _species_var[23] + _species_var[12] + _species_var[24];
-    realtype AUX_VAR_vol_tum_app = (_class_parameter[29] * AUX_VAR_T_all_Tum + _class_parameter[28] * _species_var[7] + _class_parameter[30] * (_species_var[9] + _species_var[10])) / (1.0 - _class_parameter[22]);
+    sunrealtype AUX_VAR_T_all_Tum = _species_var[23] + _species_var[12] + _species_var[24];
+    sunrealtype AUX_VAR_vol_tum_app = (_class_parameter[29] * AUX_VAR_T_all_Tum + _class_parameter[28] * _species_var[7] + _class_parameter[30] * (_species_var[9] + _species_var[10])) / (1.0 - _class_parameter[22]);
     //InitialAssignment
     _class_parameter[10] = _class_parameter[8] / _class_parameter[9];
     _class_parameter[17] = _class_parameter[12] * _class_parameter[13];
@@ -804,259 +804,259 @@ void ODE_system::setupEvents(void){
 
     return;
 }
-int ODE_system::f(realtype t, N_Vector y, N_Vector ydot, void *user_data){
+int ODE_system::f(sunrealtype t, N_Vector y, N_Vector ydot, void *user_data){
 
     ODE_system* ptrOde = static_cast<ODE_system*>(user_data);
 
     //Assignment rules:
 
-    realtype AUX_VAR_Cent = PARAM(14);
+    sunrealtype AUX_VAR_Cent = PARAM(14);
 
-    realtype AUX_VAR_Peri = PARAM(15);
+    sunrealtype AUX_VAR_Peri = PARAM(15);
 
-    realtype AUX_VAR_Tum = PARAM(18);
+    sunrealtype AUX_VAR_Tum = PARAM(18);
 
-    realtype AUX_VAR_LN = PARAM(17);
+    sunrealtype AUX_VAR_LN = PARAM(17);
 
-    realtype AUX_VAR_cpt_M = PARAM(6) * SPVAR(44);
+    sunrealtype AUX_VAR_cpt_M = PARAM(6) * SPVAR(44);
 
-    realtype AUX_VAR_p1_0_M = PARAM(6) * SPVAR(46);
+    sunrealtype AUX_VAR_p1_0_M = PARAM(6) * SPVAR(46);
 
-    realtype AUX_VAR_T_all_Tum = SPVAR(23) + SPVAR(12) + SPVAR(24);
+    sunrealtype AUX_VAR_T_all_Tum = SPVAR(23) + SPVAR(12) + SPVAR(24);
 
-    realtype AUX_VAR_k_off_Nivo = PARAM(58) * PARAM(59);
+    sunrealtype AUX_VAR_k_off_Nivo = PARAM(58) * PARAM(59);
 
-    realtype AUX_VAR_k_on1_Nivo = 2.0 * PARAM(59);
+    sunrealtype AUX_VAR_k_on1_Nivo = 2.0 * PARAM(59);
 
-    realtype AUX_VAR_k_on2_Nivo = PARAM(63) * PARAM(59) / (PARAM(34) * PARAM(35) * PARAM(6));
+    sunrealtype AUX_VAR_k_on2_Nivo = PARAM(63) * PARAM(59) / (PARAM(34) * PARAM(35) * PARAM(6));
 
-    realtype AUX_VAR_k_off_PD1_PDL1 = PARAM(75) * PARAM(76);
+    sunrealtype AUX_VAR_k_off_PD1_PDL1 = PARAM(75) * PARAM(76);
 
-    realtype AUX_VAR_k_off_PD1_PDL2 = PARAM(78) * PARAM(79);
+    sunrealtype AUX_VAR_k_off_PD1_PDL2 = PARAM(78) * PARAM(79);
 
-    realtype AUX_VAR_k_off_p1_0_M1 = PARAM(98) * PARAM(99);
+    sunrealtype AUX_VAR_k_off_p1_0_M1 = PARAM(98) * PARAM(99);
 
-    realtype AUX_VAR_k_off_cpt_M1 = PARAM(100) * PARAM(101);
+    sunrealtype AUX_VAR_k_off_cpt_M1 = PARAM(100) * PARAM(101);
 
-    realtype AUX_VAR_n_aT_prolif_TCR = PARAM(132);
+    sunrealtype AUX_VAR_n_aT_prolif_TCR = PARAM(132);
 
-    realtype AUX_VAR_n_aT_prolif_IL2 = PARAM(133) * (SPVAR(32) / PARAM(23)) / (SPVAR(32) / PARAM(23) + PARAM(135)) + 0.001;
+    sunrealtype AUX_VAR_n_aT_prolif_IL2 = PARAM(133) * (SPVAR(32) / PARAM(23)) / (SPVAR(32) / PARAM(23) + PARAM(135)) + 0.001;
 
-    realtype AUX_VAR_n_aT_prolif_Coestim = PARAM(134);
+    sunrealtype AUX_VAR_n_aT_prolif_Coestim = PARAM(134);
 
-    realtype AUX_VAR_n_Treg_prolif_IL2 = PARAM(152) * (SPVAR(32) / PARAM(23)) / (SPVAR(32) / PARAM(23) + PARAM(143));
+    sunrealtype AUX_VAR_n_Treg_prolif_IL2 = PARAM(152) * (SPVAR(32) / PARAM(23)) / (SPVAR(32) / PARAM(23) + PARAM(143));
 
-    realtype AUX_VAR_Teff2TregRatio = SPVAR(23) / SPVAR(12);
+    sunrealtype AUX_VAR_Teff2TregRatio = SPVAR(23) / SPVAR(12);
 
-    realtype AUX_VAR_nT_CD8 = PARAM(113) * AUX_VAR_Cent;
+    sunrealtype AUX_VAR_nT_CD8 = PARAM(113) * AUX_VAR_Cent;
 
-    realtype AUX_VAR_nT_CD4 = PARAM(114) * AUX_VAR_Cent;
+    sunrealtype AUX_VAR_nT_CD4 = PARAM(114) * AUX_VAR_Cent;
 
-    realtype AUX_VAR_S_adhesion_peri = PARAM(130) * AUX_VAR_Peri;
+    sunrealtype AUX_VAR_S_adhesion_peri = PARAM(130) * AUX_VAR_Peri;
 
-    realtype AUX_VAR_S_adhesion = PARAM(129) * AUX_VAR_Tum;
+    sunrealtype AUX_VAR_S_adhesion = PARAM(129) * AUX_VAR_Tum;
 
-    realtype AUX_VAR_vol_tum_app = (PARAM(29) * AUX_VAR_T_all_Tum + PARAM(28) * SPVAR(7) + PARAM(30) * (SPVAR(9) + SPVAR(10))) / (1.0 - PARAM(22));
+    sunrealtype AUX_VAR_vol_tum_app = (PARAM(29) * AUX_VAR_T_all_Tum + PARAM(28) * SPVAR(7) + PARAM(30) * (SPVAR(9) + SPVAR(10))) / (1.0 - PARAM(22));
 
-    realtype AUX_VAR_k_off1_Nivo = AUX_VAR_k_off_Nivo;
+    sunrealtype AUX_VAR_k_off1_Nivo = AUX_VAR_k_off_Nivo;
 
-    realtype AUX_VAR_k_off2_Nivo = 2.0 * AUX_VAR_k_off_Nivo;
+    sunrealtype AUX_VAR_k_off2_Nivo = 2.0 * AUX_VAR_k_off_Nivo;
 
-    realtype AUX_VAR_n_aT_prolif = AUX_VAR_n_aT_prolif_TCR + AUX_VAR_n_aT_prolif_IL2 + AUX_VAR_n_aT_prolif_Coestim;
+    sunrealtype AUX_VAR_n_aT_prolif = AUX_VAR_n_aT_prolif_TCR + AUX_VAR_n_aT_prolif_IL2 + AUX_VAR_n_aT_prolif_Coestim;
 
-    realtype AUX_VAR_T_all_Cent = AUX_VAR_nT_CD8 + SPVAR(2);
+    sunrealtype AUX_VAR_T_all_Cent = AUX_VAR_nT_CD8 + SPVAR(2);
 
-    realtype AUX_VAR_D_tum_app = std::pow(AUX_VAR_vol_tum_app / (3.14159292 / 6.0), 1.0 / 3.0);
+    sunrealtype AUX_VAR_D_tum_app = std::pow(AUX_VAR_vol_tum_app / (3.14159292 / 6.0), 1.0 / 3.0);
 
-    realtype AUX_VAR_D_tum_app_percent = AUX_VAR_D_tum_app / PARAM(19) * 100.0;
+    sunrealtype AUX_VAR_D_tum_app_percent = AUX_VAR_D_tum_app / PARAM(19) * 100.0;
 
     //Reaction fluxes:
 
-    realtype ReactionFlux1 = PARAM(37) * SPVAR(7) * (1.0 - SPVAR(7) / PARAM(38));
+    sunrealtype ReactionFlux1 = PARAM(37) * SPVAR(7) * (1.0 - SPVAR(7) / PARAM(38));
 
-    realtype ReactionFlux2 = PARAM(39) * SPVAR(7);
+    sunrealtype ReactionFlux2 = PARAM(39) * SPVAR(7);
 
-    realtype ReactionFlux3 = PARAM(40) * SPVAR(7) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0));
+    sunrealtype ReactionFlux3 = PARAM(40) * SPVAR(7) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0));
 
-    realtype ReactionFlux4 = PARAM(42) * SPVAR(7) * PARAM(41);
+    sunrealtype ReactionFlux4 = PARAM(42) * SPVAR(7) * PARAM(41);
 
 	// disabled when not steady-state
-	realtype ReactionFlux5 = use_steady_state ? -PARAM(37) * SPVAR(7) * (1.0 - SPVAR(7) / PARAM(38)) + PARAM(39) * SPVAR(7) + PARAM(40) * SPVAR(7) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0)) + PARAM(42) * SPVAR(7) * PARAM(41)
+	sunrealtype ReactionFlux5 = use_steady_state ? -PARAM(37) * SPVAR(7) * (1.0 - SPVAR(7) / PARAM(38)) + PARAM(39) * SPVAR(7) + PARAM(40) * SPVAR(7) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0)) + PARAM(42) * SPVAR(7) * PARAM(41)
 							: 0;
 
-    realtype ReactionFlux6 = PARAM(39) * SPVAR(7) * PARAM(96) * PARAM(44) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
+    sunrealtype ReactionFlux6 = PARAM(39) * SPVAR(7) * PARAM(96) * PARAM(44) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
 
-    realtype ReactionFlux7 = PARAM(40) * SPVAR(7) * PARAM(96) * PARAM(44) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0)) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
+    sunrealtype ReactionFlux7 = PARAM(40) * SPVAR(7) * PARAM(96) * PARAM(44) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0)) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
 
-    realtype ReactionFlux8 = PARAM(42) * SPVAR(7) * PARAM(41) * PARAM(96) * PARAM(44) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
+    sunrealtype ReactionFlux8 = PARAM(42) * SPVAR(7) * PARAM(41) * PARAM(96) * PARAM(44) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
 
-    realtype ReactionFlux9 = PARAM(46) * SPVAR(8) * AUX_VAR_Tum;
+    sunrealtype ReactionFlux9 = PARAM(46) * SPVAR(8) * AUX_VAR_Tum;
 
-    realtype ReactionFlux10 = PARAM(39) * SPVAR(7) * PARAM(97) * PARAM(43) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
+    sunrealtype ReactionFlux10 = PARAM(39) * SPVAR(7) * PARAM(97) * PARAM(43) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
 
-    realtype ReactionFlux11 = PARAM(40) * SPVAR(7) * PARAM(43) * PARAM(97) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0)) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
+    sunrealtype ReactionFlux11 = PARAM(40) * SPVAR(7) * PARAM(43) * PARAM(97) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0)) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
 
-    realtype ReactionFlux12 = PARAM(42) * PARAM(97) * SPVAR(7) * PARAM(41) * PARAM(43) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
+    sunrealtype ReactionFlux12 = PARAM(42) * PARAM(97) * SPVAR(7) * PARAM(41) * PARAM(43) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
 
-    realtype ReactionFlux13 = PARAM(46) * SPVAR(22) * AUX_VAR_Tum;
+    sunrealtype ReactionFlux13 = PARAM(46) * SPVAR(22) * AUX_VAR_Tum;
 
-    realtype ReactionFlux14 = PARAM(57) * SPVAR(8) * AUX_VAR_Tum * SPVAR(7) / PARAM(38);
+    sunrealtype ReactionFlux14 = PARAM(57) * SPVAR(8) * AUX_VAR_Tum * SPVAR(7) / PARAM(38);
 
-    realtype ReactionFlux15 = PARAM(57) * SPVAR(22) * AUX_VAR_Tum * SPVAR(7) / PARAM(38);
+    sunrealtype ReactionFlux15 = PARAM(57) * SPVAR(22) * AUX_VAR_Tum * SPVAR(7) / PARAM(38);
 
-    realtype ReactionFlux16 = PARAM(46) * SPVAR(33) * AUX_VAR_LN;
+    sunrealtype ReactionFlux16 = PARAM(46) * SPVAR(33) * AUX_VAR_LN;
 
-    realtype ReactionFlux17 = PARAM(46) * SPVAR(34) * AUX_VAR_LN;
+    sunrealtype ReactionFlux17 = PARAM(46) * SPVAR(34) * AUX_VAR_LN;
 
-    realtype ReactionFlux18 = PARAM(93) * PARAM(92);
+    sunrealtype ReactionFlux18 = PARAM(93) * PARAM(92);
 
-    realtype ReactionFlux19 = PARAM(93) * SPVAR(39);
+    sunrealtype ReactionFlux19 = PARAM(93) * SPVAR(39);
 
-    realtype ReactionFlux20 = PARAM(94) * SPVAR(45);
+    sunrealtype ReactionFlux20 = PARAM(94) * SPVAR(45);
 
-    realtype ReactionFlux21 = PARAM(84) * PARAM(82) * SPVAR(8) / PARAM(22);
+    sunrealtype ReactionFlux21 = PARAM(84) * PARAM(82) * SPVAR(8) / PARAM(22);
 
-    realtype ReactionFlux22 = PARAM(85) * SPVAR(37);
+    sunrealtype ReactionFlux22 = PARAM(85) * SPVAR(37);
 
-    realtype ReactionFlux23 = PARAM(85) * PARAM(83) * SPVAR(37);
+    sunrealtype ReactionFlux23 = PARAM(85) * PARAM(83) * SPVAR(37);
 
-    realtype ReactionFlux24 = PARAM(101) * SPVAR(39) * SPVAR(38) / PARAM(81) - AUX_VAR_k_off_cpt_M1 * SPVAR(40);
+    sunrealtype ReactionFlux24 = PARAM(101) * SPVAR(39) * SPVAR(38) / PARAM(81) - AUX_VAR_k_off_cpt_M1 * SPVAR(40);
 
-    realtype ReactionFlux25 = PARAM(86) * SPVAR(38);
+    sunrealtype ReactionFlux25 = PARAM(86) * SPVAR(38);
 
-    realtype ReactionFlux26 = PARAM(87) * SPVAR(40);
+    sunrealtype ReactionFlux26 = PARAM(87) * SPVAR(40);
 
-    realtype ReactionFlux27 = PARAM(102) * SPVAR(40);
+    sunrealtype ReactionFlux27 = PARAM(102) * SPVAR(40);
 
-    realtype ReactionFlux28 = AUX_VAR_k_off_cpt_M1 * SPVAR(44);
+    sunrealtype ReactionFlux28 = AUX_VAR_k_off_cpt_M1 * SPVAR(44);
 
-    realtype ReactionFlux29 = PARAM(88) * PARAM(82) * SPVAR(22) / PARAM(22);
+    sunrealtype ReactionFlux29 = PARAM(88) * PARAM(82) * SPVAR(22) / PARAM(22);
 
-    realtype ReactionFlux30 = PARAM(89) * SPVAR(41);
+    sunrealtype ReactionFlux30 = PARAM(89) * SPVAR(41);
 
-    realtype ReactionFlux31 = PARAM(89) * PARAM(83) * SPVAR(41);
+    sunrealtype ReactionFlux31 = PARAM(89) * PARAM(83) * SPVAR(41);
 
-    realtype ReactionFlux32 = PARAM(99) * SPVAR(39) * SPVAR(42) / PARAM(81) - AUX_VAR_k_off_p1_0_M1 * SPVAR(43);
+    sunrealtype ReactionFlux32 = PARAM(99) * SPVAR(39) * SPVAR(42) / PARAM(81) - AUX_VAR_k_off_p1_0_M1 * SPVAR(43);
 
-    realtype ReactionFlux33 = PARAM(90) * SPVAR(42);
+    sunrealtype ReactionFlux33 = PARAM(90) * SPVAR(42);
 
-    realtype ReactionFlux34 = PARAM(91) * SPVAR(43);
+    sunrealtype ReactionFlux34 = PARAM(91) * SPVAR(43);
 
-    realtype ReactionFlux35 = PARAM(95) * SPVAR(43);
+    sunrealtype ReactionFlux35 = PARAM(95) * SPVAR(43);
 
-    realtype ReactionFlux36 = AUX_VAR_k_off_p1_0_M1 * SPVAR(46);
+    sunrealtype ReactionFlux36 = AUX_VAR_k_off_p1_0_M1 * SPVAR(46);
 
-    realtype ReactionFlux37 = PARAM(105) * SPVAR(7) / PARAM(38) * PARAM(103) * AUX_VAR_Tum;
+    sunrealtype ReactionFlux37 = PARAM(105) * SPVAR(7) / PARAM(38) * PARAM(103) * AUX_VAR_Tum;
 
-    realtype ReactionFlux38 = PARAM(105) * SPVAR(9);
+    sunrealtype ReactionFlux38 = PARAM(105) * SPVAR(9);
 
-    realtype ReactionFlux39 = PARAM(108) * PARAM(107) * AUX_VAR_Tum;
+    sunrealtype ReactionFlux39 = PARAM(108) * PARAM(107) * AUX_VAR_Tum;
 
-    realtype ReactionFlux40 = PARAM(40) * SPVAR(7) * PARAM(45) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0)) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
+    sunrealtype ReactionFlux40 = PARAM(40) * SPVAR(7) * PARAM(45) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * (0.0 + 1.0 - std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0)) * PARAM(38) / (SPVAR(7) + 1.0 * PARAM(7));
 
-    realtype ReactionFlux41 = PARAM(108) * SPVAR(11) * AUX_VAR_Tum;
+    sunrealtype ReactionFlux41 = PARAM(108) * SPVAR(11) * AUX_VAR_Tum;
 
-    realtype ReactionFlux42 = PARAM(110) * SPVAR(9) * SPVAR(11) / (PARAM(111) + SPVAR(11));
+    sunrealtype ReactionFlux42 = PARAM(110) * SPVAR(9) * SPVAR(11) / (PARAM(111) + SPVAR(11));
 
-    realtype ReactionFlux43 = PARAM(112) * SPVAR(10);
+    sunrealtype ReactionFlux43 = PARAM(112) * SPVAR(10);
 
-    realtype ReactionFlux44 = PARAM(106) * SPVAR(27);
+    sunrealtype ReactionFlux44 = PARAM(106) * SPVAR(27);
 
-    realtype ReactionFlux45 = PARAM(105) * PARAM(104) * AUX_VAR_LN;
+    sunrealtype ReactionFlux45 = PARAM(105) * PARAM(104) * AUX_VAR_LN;
 
-    realtype ReactionFlux46 = PARAM(105) * SPVAR(26);
+    sunrealtype ReactionFlux46 = PARAM(105) * SPVAR(26);
 
-    realtype ReactionFlux47 = PARAM(136) * SPVAR(35);
+    sunrealtype ReactionFlux47 = PARAM(136) * SPVAR(35);
 
-    realtype ReactionFlux48 = PARAM(137) * SPVAR(32) * AUX_VAR_LN;
+    sunrealtype ReactionFlux48 = PARAM(137) * SPVAR(32) * AUX_VAR_LN;
 
-    realtype ReactionFlux49 = PARAM(138) * SPVAR(30) * (SPVAR(32) / PARAM(23) / (PARAM(143) + SPVAR(32) / PARAM(23)));
+    sunrealtype ReactionFlux49 = PARAM(138) * SPVAR(30) * (SPVAR(32) / PARAM(23) / (PARAM(143) + SPVAR(32) / PARAM(23)));
 
-    realtype ReactionFlux50 = PARAM(138) * SPVAR(35) * (SPVAR(32) / PARAM(23) / (PARAM(135) + SPVAR(32) / PARAM(23)));
+    sunrealtype ReactionFlux50 = PARAM(138) * SPVAR(35) * (SPVAR(32) / PARAM(23) / (PARAM(135) + SPVAR(32) / PARAM(23)));
 
-    realtype ReactionFlux51 = PARAM(115) * AUX_VAR_nT_CD8 * AUX_VAR_LN;
+    sunrealtype ReactionFlux51 = PARAM(115) * AUX_VAR_nT_CD8 * AUX_VAR_LN;
 
-    realtype ReactionFlux52 = PARAM(116) * SPVAR(28);
+    sunrealtype ReactionFlux52 = PARAM(116) * SPVAR(28);
 
-    realtype ReactionFlux53 = PARAM(119) * PARAM(97) * (SPVAR(28) / PARAM(117)) * (PARAM(120) * SPVAR(27) / (PARAM(120) * SPVAR(27) + SPVAR(28) / PARAM(117))) * (AUX_VAR_p1_0_M / PARAM(97) / (AUX_VAR_p1_0_M / PARAM(97) + PARAM(121)));
+    sunrealtype ReactionFlux53 = PARAM(119) * PARAM(97) * (SPVAR(28) / PARAM(117)) * (PARAM(120) * SPVAR(27) / (PARAM(120) * SPVAR(27) + SPVAR(28) / PARAM(117))) * (AUX_VAR_p1_0_M / PARAM(97) / (AUX_VAR_p1_0_M / PARAM(97) + PARAM(121)));
 
-    realtype ReactionFlux54 = PARAM(122) * SPVAR(35);
+    sunrealtype ReactionFlux54 = PARAM(122) * SPVAR(35);
 
-    realtype ReactionFlux55 = PARAM(122) * std::pow(2.0, AUX_VAR_n_aT_prolif) * SPVAR(35);
+    sunrealtype ReactionFlux55 = PARAM(122) * std::pow(2.0, AUX_VAR_n_aT_prolif) * SPVAR(35);
 
-    realtype ReactionFlux56 = PARAM(123) * SPVAR(36);
+    sunrealtype ReactionFlux56 = PARAM(123) * SPVAR(36);
 
-    realtype ReactionFlux57 = PARAM(126) * SPVAR(36);
+    sunrealtype ReactionFlux57 = PARAM(126) * SPVAR(36);
 
-    realtype ReactionFlux58 = PARAM(123) * SPVAR(2);
+    sunrealtype ReactionFlux58 = PARAM(123) * SPVAR(2);
 
-    realtype ReactionFlux59 = QSP_W * (PARAM(127) * AUX_VAR_S_adhesion * SPVAR(2) * AUX_VAR_Tum * SPVAR(7) / PARAM(38) * PARAM(24) / AUX_VAR_Cent);
+    sunrealtype ReactionFlux59 = QSP_W * (PARAM(127) * AUX_VAR_S_adhesion * SPVAR(2) * AUX_VAR_Tum * SPVAR(7) / PARAM(38) * PARAM(24) / AUX_VAR_Cent);
 
-    realtype ReactionFlux60 = PARAM(123) * SPVAR(23);
+    sunrealtype ReactionFlux60 = PARAM(123) * SPVAR(23);
 
-    realtype ReactionFlux61 = PARAM(125) * SPVAR(7) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * ((SPVAR(20) + SPVAR(21)) / (SPVAR(20) + SPVAR(21) + PARAM(77)));
+    sunrealtype ReactionFlux61 = PARAM(125) * SPVAR(7) * SPVAR(23) / (SPVAR(7) + AUX_VAR_T_all_Tum) * ((SPVAR(20) + SPVAR(21)) / (SPVAR(20) + SPVAR(21) + PARAM(77)));
 
-    realtype ReactionFlux62 = PARAM(151) * SPVAR(24);
+    sunrealtype ReactionFlux62 = PARAM(151) * SPVAR(24);
 
-    realtype ReactionFlux63 = PARAM(127) * AUX_VAR_S_adhesion_peri * SPVAR(2) * AUX_VAR_Peri * PARAM(24) / AUX_VAR_Cent;
+    sunrealtype ReactionFlux63 = PARAM(127) * AUX_VAR_S_adhesion_peri * SPVAR(2) * AUX_VAR_Peri * PARAM(24) / AUX_VAR_Cent;
 
-    realtype ReactionFlux64 = PARAM(128) * SPVAR(5);
+    sunrealtype ReactionFlux64 = PARAM(128) * SPVAR(5);
 
-    realtype ReactionFlux65 = PARAM(124) * SPVAR(5);
+    sunrealtype ReactionFlux65 = PARAM(124) * SPVAR(5);
 
-    realtype ReactionFlux66 = PARAM(115) * AUX_VAR_nT_CD4 * AUX_VAR_LN;
+    sunrealtype ReactionFlux66 = PARAM(115) * AUX_VAR_nT_CD4 * AUX_VAR_LN;
 
-    realtype ReactionFlux67 = PARAM(116) * SPVAR(29);
+    sunrealtype ReactionFlux67 = PARAM(116) * SPVAR(29);
 
-    realtype ReactionFlux68 = PARAM(139) * PARAM(96) * (SPVAR(29) / PARAM(118)) * (PARAM(140) * SPVAR(26) / (PARAM(140) * SPVAR(26) + SPVAR(29) / PARAM(118))) * (AUX_VAR_cpt_M / PARAM(96) / (AUX_VAR_cpt_M / PARAM(96) + PARAM(121)));
+    sunrealtype ReactionFlux68 = PARAM(139) * PARAM(96) * (SPVAR(29) / PARAM(118)) * (PARAM(140) * SPVAR(26) / (PARAM(140) * SPVAR(26) + SPVAR(29) / PARAM(118))) * (AUX_VAR_cpt_M / PARAM(96) / (AUX_VAR_cpt_M / PARAM(96) + PARAM(121)));
 
-    realtype ReactionFlux69 = PARAM(142) * SPVAR(30);
+    sunrealtype ReactionFlux69 = PARAM(142) * SPVAR(30);
 
-    realtype ReactionFlux70 = PARAM(142) * std::pow(2.0, AUX_VAR_n_Treg_prolif_IL2) * SPVAR(30);
+    sunrealtype ReactionFlux70 = PARAM(142) * std::pow(2.0, AUX_VAR_n_Treg_prolif_IL2) * SPVAR(30);
 
-    realtype ReactionFlux71 = PARAM(145) * SPVAR(31);
+    sunrealtype ReactionFlux71 = PARAM(145) * SPVAR(31);
 
-    realtype ReactionFlux72 = PARAM(146) * SPVAR(31);
+    sunrealtype ReactionFlux72 = PARAM(146) * SPVAR(31);
 
-    realtype ReactionFlux73 = PARAM(145) * SPVAR(1);
+    sunrealtype ReactionFlux73 = PARAM(145) * SPVAR(1);
 
-    realtype ReactionFlux74 = PARAM(145) * PARAM(144);
+    sunrealtype ReactionFlux74 = PARAM(145) * PARAM(144);
 
-    realtype ReactionFlux75 = QSP_W * (PARAM(147) * AUX_VAR_S_adhesion * SPVAR(1) * AUX_VAR_Tum * SPVAR(7) / PARAM(38) * PARAM(24) / AUX_VAR_Cent);
+    sunrealtype ReactionFlux75 = QSP_W * (PARAM(147) * AUX_VAR_S_adhesion * SPVAR(1) * AUX_VAR_Tum * SPVAR(7) / PARAM(38) * PARAM(24) / AUX_VAR_Cent);
 
-    realtype ReactionFlux76 = PARAM(145) * SPVAR(12);
+    sunrealtype ReactionFlux76 = PARAM(145) * SPVAR(12);
 
-    realtype ReactionFlux77 = PARAM(147) * AUX_VAR_S_adhesion_peri * SPVAR(1) * AUX_VAR_Peri * PARAM(24) / AUX_VAR_Cent;
+    sunrealtype ReactionFlux77 = PARAM(147) * AUX_VAR_S_adhesion_peri * SPVAR(1) * AUX_VAR_Peri * PARAM(24) / AUX_VAR_Cent;
 
-    realtype ReactionFlux78 = PARAM(148) * SPVAR(4);
+    sunrealtype ReactionFlux78 = PARAM(148) * SPVAR(4);
 
-    realtype ReactionFlux79 = PARAM(145) * SPVAR(4);
+    sunrealtype ReactionFlux79 = PARAM(145) * SPVAR(4);
 
-    realtype ReactionFlux80 = PARAM(149) * SPVAR(23) * (SPVAR(12) / (SPVAR(7) + AUX_VAR_T_all_Tum)) * (1.0 + std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0));
+    sunrealtype ReactionFlux80 = PARAM(149) * SPVAR(23) * (SPVAR(12) / (SPVAR(7) + AUX_VAR_T_all_Tum)) * (1.0 + std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) / (std::pow((SPVAR(20) + SPVAR(21)) / PARAM(77), PARAM(80)) + 1.0));
 
-    realtype ReactionFlux81 = PARAM(76) * SPVAR(14) * SPVAR(18) / PARAM(34) - AUX_VAR_k_off_PD1_PDL1 * SPVAR(20);
+    sunrealtype ReactionFlux81 = PARAM(76) * SPVAR(14) * SPVAR(18) / PARAM(34) - AUX_VAR_k_off_PD1_PDL1 * SPVAR(20);
 
-    realtype ReactionFlux82 = PARAM(79) * SPVAR(14) * SPVAR(19) / PARAM(34) - AUX_VAR_k_off_PD1_PDL2 * SPVAR(21);
+    sunrealtype ReactionFlux82 = PARAM(79) * SPVAR(14) * SPVAR(19) / PARAM(34) - AUX_VAR_k_off_PD1_PDL2 * SPVAR(21);
 
-    realtype ReactionFlux83 = PARAM(59) * (SPVAR(13) * SPVAR(6) / PARAM(22)) - AUX_VAR_k_off_Nivo * SPVAR(15);
+    sunrealtype ReactionFlux83 = PARAM(59) * (SPVAR(13) * SPVAR(6) / PARAM(22)) - AUX_VAR_k_off_Nivo * SPVAR(15);
 
-    realtype ReactionFlux84 = AUX_VAR_k_on1_Nivo * (SPVAR(14) * SPVAR(6) / PARAM(22)) - AUX_VAR_k_off1_Nivo * SPVAR(16);
+    sunrealtype ReactionFlux84 = AUX_VAR_k_on1_Nivo * (SPVAR(14) * SPVAR(6) / PARAM(22)) - AUX_VAR_k_off1_Nivo * SPVAR(16);
 
-    realtype ReactionFlux85 = AUX_VAR_k_on2_Nivo * SPVAR(16) * SPVAR(14) - AUX_VAR_k_off2_Nivo * SPVAR(17);
+    sunrealtype ReactionFlux85 = AUX_VAR_k_on2_Nivo * SPVAR(16) * SPVAR(14) - AUX_VAR_k_off2_Nivo * SPVAR(17);
 
-    realtype ReactionFlux86 = NSPVAR(4) / PARAM(71);
+    sunrealtype ReactionFlux86 = NSPVAR(4) / PARAM(71);
 
-    realtype ReactionFlux87 = PARAM(68) * SPVAR(0) * AUX_VAR_Cent;
+    sunrealtype ReactionFlux87 = PARAM(68) * SPVAR(0) * AUX_VAR_Cent;
 
-    realtype ReactionFlux88 = PARAM(51) * PARAM(70) * PARAM(54) * AUX_VAR_Peri * SPVAR(0) / PARAM(71) - PARAM(51) * PARAM(70) * PARAM(54) * AUX_VAR_Peri * SPVAR(3) / PARAM(69);
+    sunrealtype ReactionFlux88 = PARAM(51) * PARAM(70) * PARAM(54) * AUX_VAR_Peri * SPVAR(0) / PARAM(71) - PARAM(51) * PARAM(70) * PARAM(54) * AUX_VAR_Peri * SPVAR(3) / PARAM(69);
 
-    realtype ReactionFlux89 = PARAM(52) * PARAM(55) * AUX_VAR_Tum * SPVAR(0) / PARAM(71) - PARAM(52) * PARAM(55) * AUX_VAR_Tum * SPVAR(6) / PARAM(22);
+    sunrealtype ReactionFlux89 = PARAM(52) * PARAM(55) * AUX_VAR_Tum * SPVAR(0) / PARAM(71) - PARAM(52) * PARAM(55) * AUX_VAR_Tum * SPVAR(6) / PARAM(22);
 
-    realtype ReactionFlux90 = PARAM(53) * PARAM(70) * PARAM(56) * AUX_VAR_LN * SPVAR(0) / PARAM(71) - PARAM(53) * PARAM(70) * PARAM(56) * AUX_VAR_LN * SPVAR(25) / PARAM(23);
+    sunrealtype ReactionFlux90 = PARAM(53) * PARAM(70) * PARAM(56) * AUX_VAR_LN * SPVAR(0) / PARAM(71) - PARAM(53) * PARAM(70) * PARAM(56) * AUX_VAR_LN * SPVAR(25) / PARAM(23);
 
-    realtype ReactionFlux91 = PARAM(57) * AUX_VAR_Tum * SPVAR(6) / PARAM(22);
+    sunrealtype ReactionFlux91 = PARAM(57) * AUX_VAR_Tum * SPVAR(6) / PARAM(22);
 
-    realtype ReactionFlux92 = PARAM(57) * AUX_VAR_Tum * SPVAR(25) / PARAM(23);
+    sunrealtype ReactionFlux92 = PARAM(57) * AUX_VAR_Tum * SPVAR(25) / PARAM(23);
 
     //dydt:
 
@@ -1203,7 +1203,7 @@ int ODE_system::f(realtype t, N_Vector y, N_Vector ydot, void *user_data){
 
     return(0);
 }
-int ODE_system::g(realtype t, N_Vector y, realtype *gout, void *user_data){
+int ODE_system::g(sunrealtype t, N_Vector y, sunrealtype *gout, void *user_data){
 
     ODE_system* ptrOde = static_cast<ODE_system*>(user_data);
 
@@ -1230,10 +1230,10 @@ int ODE_system::g(realtype t, N_Vector y, realtype *gout, void *user_data){
     return(0);
 }
 
-bool ODE_system::triggerComponentEvaluate(int i, realtype t, bool curr) {
+bool ODE_system::triggerComponentEvaluate(int i, sunrealtype t, bool curr) {
 
     bool discrete = false;
-    realtype diff = 0;
+    sunrealtype diff = 0;
     bool eval = false;
     //Assignment rules:
 
@@ -1304,7 +1304,7 @@ bool ODE_system::eventEvaluate(int i) {
     return eval;
 }
 
-bool ODE_system::eventExecution(int i, bool delayed, realtype& dt){
+bool ODE_system::eventExecution(int i, bool delayed, sunrealtype& dt){
 
     bool setDelay = false;
 	double C1_res = _class_parameter[48];
@@ -1351,15 +1351,15 @@ bool ODE_system::eventExecution(int i, bool delayed, realtype& dt){
 }
 void ODE_system::update_y_other(void){
 
-    realtype AUX_VAR_Cent = _class_parameter[14];
+    sunrealtype AUX_VAR_Cent = _class_parameter[14];
 
-    realtype AUX_VAR_cpt_M = _class_parameter[6] * NV_DATA_S(_y)[44];
+    sunrealtype AUX_VAR_cpt_M = _class_parameter[6] * NV_DATA_S(_y)[44];
 
-    realtype AUX_VAR_p1_0_M = _class_parameter[6] * NV_DATA_S(_y)[46];
+    sunrealtype AUX_VAR_p1_0_M = _class_parameter[6] * NV_DATA_S(_y)[46];
 
-    realtype AUX_VAR_nT_CD8 = _class_parameter[113] * AUX_VAR_Cent;
+    sunrealtype AUX_VAR_nT_CD8 = _class_parameter[113] * AUX_VAR_Cent;
 
-    realtype AUX_VAR_nT_CD4 = _class_parameter[114] * AUX_VAR_Cent;
+    sunrealtype AUX_VAR_nT_CD4 = _class_parameter[114] * AUX_VAR_Cent;
 
     //Cent.nT_CD8
     _species_other[0] = AUX_VAR_nT_CD8;
@@ -1447,9 +1447,9 @@ std::string ODE_system::getHeader(){
     s += ",mAPC_Surf.p1_0_M";
     return s;
 }
-realtype ODE_system::get_unit_conversion_species(int i) const{
+sunrealtype ODE_system::get_unit_conversion_species(int i) const{
 
-    static std::vector<realtype> scalor = {
+    static std::vector<sunrealtype> scalor = {
         //sp_var
         1000.0,
         1.66053872801495e-24,
@@ -1510,9 +1510,9 @@ realtype ODE_system::get_unit_conversion_species(int i) const{
     };
     return scalor[i];
 }
-realtype ODE_system::get_unit_conversion_nspvar(int i) const{
+sunrealtype ODE_system::get_unit_conversion_nspvar(int i) const{
 
-    static std::vector<realtype> scalor = {
+    static std::vector<sunrealtype> scalor = {
         1.0,
         86400.0,
         1.0,

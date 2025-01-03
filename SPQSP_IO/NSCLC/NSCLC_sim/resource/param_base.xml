@@ -309,6 +309,7 @@
         <K_p_M>400</K_p_M>
         <k_aT_prolif>1</k_aT_prolif>
         <k_Teff_death>0.01</k_Teff_death>
+        <k_Teff_exh_death>.1</k_Teff_exh_death>
         <k_Teff_death_peri>0.01</k_Teff_death_peri>
         <k_Teff_death_by_C>0.05</k_Teff_death_by_C>
         <k_Teff_egress>1</k_Teff_egress>
@@ -345,6 +346,7 @@
         <k_Teff_inhibBy_Treg>1</k_Teff_inhibBy_Treg>
         <K_Treg_inhib>1e-09</K_Treg_inhib>
         <n_Treg_prolif_IL2>11</n_Treg_prolif_IL2>
+        <n_Treg_prolif_IL20>8</n_Treg_prolif_IL20>
         <Teff2TregRatio>4.4227</Teff2TregRatio>
       </Parameter>
     </init_value>

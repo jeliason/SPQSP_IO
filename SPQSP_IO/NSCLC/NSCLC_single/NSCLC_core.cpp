@@ -95,7 +95,7 @@ void NSCLC_Core::timeSlice(const long slice){
 	double lymphCC = qsp_var[SP_QSP_IO::SP_QSP_NSCLC::LymphCentral::QSPEX_TUM_C];
 
 	/* if QSP halted, skip*/
-	std::cout << "lymph CC: " << lymphCC << std::endl;
+	// std::cout << "lymph CC: " << lymphCC << std::endl;
 	double abm_min_cc = params.getVal(SP_QSP_IO::SP_QSP_NSCLC::PARAM_C1_MIN);
 	if (lymphCC > abm_min_cc)
 	{
@@ -128,7 +128,7 @@ void NSCLC_Core::timeSlice(const long slice){
 
 		double abm_scaler = (1 - w) / w * lymphCC / (tumCC+ abm_min_cc );
 
-		std::cout << "scalor:\n" <<  abm_scaler<< std::endl;
+		// std::cout << "scalor:\n" <<  abm_scaler<< std::endl;
 
 		for (size_t i = 0; i < abm_var_len; i++)
 		{

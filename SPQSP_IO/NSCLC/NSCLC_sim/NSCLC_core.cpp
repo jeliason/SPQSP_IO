@@ -203,9 +203,9 @@ void NSCLC_Core::timeSlice(const long slice){
 
 		/*
 			*/
-		std::cout << "scalor: ( f = " << fraction_margin << ", " << fraction_core <<  ")\n" 
-			<< "core:" << abm_scaler_core 
-			<< "\nmargin: " << abm_scaler_margin << std::endl << std::endl;
+		// std::cout << "scalor: ( f = " << fraction_margin << ", " << fraction_core <<  ")\n" 
+			// << "core:" << abm_scaler_core 
+			// << "\nmargin: " << abm_scaler_margin << std::endl << std::endl;
 
 		for (size_t i = 0; i < abm_var_len; i++)
 		{
@@ -213,8 +213,8 @@ void NSCLC_Core::timeSlice(const long slice){
 				+ abm_var_1[i] * abm_scaler_margin;
 		}
 		int idx = SP_QSP_IO::SP_QSP_NSCLC::Tumor::TUMEX_CC_T_KILL;
-		std::cout << "total: " << abm_var[idx] << ", core: " << abm_var_0[idx]
-			<< ", margin: " << abm_var_1[idx] << std::endl;
+		// std::cout << "total: " << abm_var[idx] << ", core: " << abm_var_0[idx]
+			// << ", margin: " << abm_var_1[idx] << std::endl;
 
 		_lymph.update_qsp_var(abm_var);
 

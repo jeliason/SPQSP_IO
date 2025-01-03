@@ -286,8 +286,8 @@ void LymphCentral::update_qsp_var(const std::vector<double>& var_abm){
 
 	//std::cout << "cc death: " << cc_death_total << " (by Teff: "
 	//	<< cc_death_Teff << ")" << std::endl;
-	std::cout << "killed: " << cc_death_Teff << std::endl;
-	std::cout << "d1 (pM/L): " << d1 * 1e9 << "; ";
+	// std::cout << "killed: " << cc_death_Teff << std::endl;
+	// std::cout << "d1 (pM/L): " << d1 * 1e9 << "; ";
 
 	//cp += cc_death_total * factor_cp / V_tum ;
 	//d1 += cc_death_total *  factor_d / V_tum ;
@@ -300,8 +300,8 @@ void LymphCentral::update_qsp_var(const std::vector<double>& var_abm){
 	d1 += inc_d1;
 	ckine += inc_ckine;
 
-	std::cout << "add d1 (pM/L): " << inc_d1 * 1e9;
-	std::cout << "; new d1 (pM/L): " << d1 * 1e9 << std::endl;
+	// std::cout << "add d1 (pM/L): " << inc_d1 * 1e9;
+	// std::cout << "; new d1 (pM/L): " << d1 * 1e9 << std::endl;
 
 	SET_VAR(QSP_ID_CP, cp);
 	SET_VAR(QSP_ID_D1, d1);
