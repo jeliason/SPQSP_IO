@@ -25,16 +25,17 @@ MASTER_SCRIPT_NAME="run_all.sh"
 SBATCH_LOG="job_output.log"
 PREPROCESS_LOG="preprocess.log"
 POSTPROCESS_LOG="postprocess.log"
-EXEC_FOLDER="../SPQSP_IO/NSCLC/NSCLC_multi/macos"  # Folder containing the executable
 EXEC_NAME="nsclc_sim_multi"  # Executable name
 
 
 if [ "$SYSTEM_ENV" != "laptop" ]; then
 	VENV_ACTIVATE="source ~/virtual_envs/physicell/bin/activate"
     OUT_FOLDER="/nfs/turbo/umms-ukarvind/joelne/SPQSP_IO/$WORK_DIR"  # Output folder
+    EXEC_FOLDER="../SPQSP_IO/NSCLC/NSCLC_multi/hpc"  # Folder containing the executable
 else
     VENV_ACTIVATE="mamba activate spqsp"
     OUT_FOLDER="vp"  # Output folder
+    EXEC_FOLDER="../SPQSP_IO/NSCLC/NSCLC_multi/macos"  # Folder containing the executable
 fi
 
 
