@@ -25,7 +25,7 @@ cvodeLibDir = $(HOME)/lib/sundials-7.2.1/lib64
 INCLUDES = -I$(boostIncludeDir) -I$(cvodeIncludeDir) -I$(projectDir)
 LIBDIR = -L$(boostLibDir) -L$(cvodeLibDir)
 
-staticLibs = -lboost_serialization -lboost_system -lboost_filesystem\
+staticLibs = -lboost_serialization -lboost_system -lboost_atomic -lboost_filesystem\
 	 -lboost_date_time -lboost_program_options\
 	 -lsundials_core -lsundials_cvode -lsundials_nvecserial
 # dynamicLibs = 
