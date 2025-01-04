@@ -23,7 +23,7 @@ boostLibDir = $(HOME)/lib/boost_1_87_0/lib
 cvodeLibDir = $(HOME)/lib/sundials-7.2.1/lib64
 
 INCLUDES = -I$(boostIncludeDir) -I$(cvodeIncludeDir) -I$(projectDir)
-LIBDIR = -L$(boostLibDir) -L$(cvodeLibDir)
+LIBDIR = -L$(boostLibDir) -L$(cvodeLibDir) -Wl,-rpath=$(boostLibDir) -Wl,-rpath=$(cvodeLibDir)
 
 staticLibs = -lboost_serialization -lboost_system -lboost_atomic -lboost_filesystem\
 	 -lboost_date_time -lboost_program_options\
