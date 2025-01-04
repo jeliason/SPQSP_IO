@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 const int mxstep = 10000;
 
