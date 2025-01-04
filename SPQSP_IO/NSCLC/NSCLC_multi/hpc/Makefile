@@ -28,8 +28,9 @@ LIBDIR = -L$(boostLibDir) -L$(cvodeLibDir)
 staticLibs = -lboost_serialization -lboost_system -lboost_filesystem\
 	 -lboost_date_time -lboost_program_options\
 	 -lsundials_core -lsundials_cvode -lsundials_nvecserial
-dynamicLibs = 
-LIBS = -Wl,-Bstatic $(staticLibs)  -Wl,-Bdynamic $(dynamicLibs)
+# dynamicLibs = 
+# LIBS = -Wl,-Bstatic $(staticLibs)  -Wl,-Bdynamic $(dynamicLibs)
+LIBS = $(staticLibs)
 
 # execuatble file
 MAIN = nsclc_sim_multi
