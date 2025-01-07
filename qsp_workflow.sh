@@ -1,21 +1,20 @@
 #!/bin/bash
 
 # === Configuration ===
-EXP_NAME="hpc1"                # Folder to create
-# IMPORTANT TO CHANGE Params_batch.xml here! n in Params_batch.xml should match the ARRAY_SIZE slurm parameter below
+EXP_NAME="hpc_10k_kd_pd1"                # Folder to create
+# IMPORTANT TO CHANGE Params_batch.xml here! n in Params_batch.xml should match the ARRAY_SIZE * NUM_SIMS_PER_JOB slurm parameters below
 TRANSFER_TO_HPC=1              # Transfer the folder to the HPC (0 for no, 1 for yes)
 RUN_ON_HPC=1                    # Run the workflow on HPC (0 for no, 1 for yes) - configures variables accordingly
 
 # === Model Configuration ===
 RUNTIME=1460                   # Simulation runtime
-GRID_INTERVAL=28               # Grid interval
-GRID_SAVE=1                    # Save grid (0 for none, 1 for cells only, 2 for substrates, 3 for both)
+GRID_SAVE=0
 
 # === SLURM Configuration ===
-TIME="10:00"                # Expected runtime
+TIME="45:00"                # Expected runtime
 CPUS_PER_TASK=1                # Number of CPUs per task
-ARRAY_SIZE=2                  # Number of jobs in the array
-NUM_SIMS_PER_JOB=5            # Number of simulations per job (ARRAY_SIZE * NUM_SIMS_PER_JOB = total simulations to run, in Params_batch.xml)
+ARRAY_SIZE=10                  # Number of jobs in the array
+NUM_SIMS_PER_JOB=1000            # Number of simulations per job (ARRAY_SIZE * NUM_SIMS_PER_JOB = total simulations to run, in Params_batch.xml)
 MEM="1G"                       # Memory per node
 
 
@@ -30,6 +29,7 @@ POSTPROCESS_LOG="postprocess.log"
 EXEC_NAME="nsclc_sim_qsp"  # Executable name
 FILES_TO_COPY=("Params_batch.xml" "expBatchGen.py") # Files to copy into the folder
 SRC_FOLDER="qsp_src"
+TOTAL_SIMS=$((ARRAY_SIZE * NUM_SIMS_PER_JOB))
 if [ $RUN_ON_HPC -eq 1 ]; then
     VENV_ACTIVATE="source ~/virtual_envs/physicell/bin/activate"
     EXEC_FOLDER="../../SPQSP_IO/NSCLC/NSCLC_qsp/hpc"  # Folder containing the executable
@@ -81,6 +81,65 @@ EOF
 chmod +x "$WORK_DIR/$PREPROCESS_SCRIPT_NAME"
 echo "Created preprocessing script: $WORK_DIR/$PREPROCESS_SCRIPT_NAME"
 
+# python script to read for one sample and write to a numpy array
+cat << EOF > "$WORK_DIR/save_results.py"
+import numpy as np
+import pandas as pd
+import os
+import sys
+
+args = sys.argv
+param_id = str(args[1])
+
+species_to_keep = [
+	# 'time',
+	# blood species
+	'Cent.Teff_1_0',
+	'Cent.Treg',
+	'Cent.nT_CD4',
+	'Cent.nT_CD8',
+	'Cent.Nivo',
+	# lymph node species
+	'LN.Nivo',
+	'LN.APC',
+	'LN.mAPC',
+	'LN.nT_CD8',
+	'LN.nT_CD4',
+	'LN.Treg',
+	'LN.aTreg_CD4',
+	'LN.IL2',
+	'LN.Cp',
+	'LN.D1_0',
+	'LN.aT_1_0',
+	'LN.Teff_1_0',
+	# tumor species
+	'Tum.Nivo',
+	'Tum.APC',
+	'Tum.mAPC',
+	'Tum.C1',
+	'Tum.Cp',
+	'Tum.Ckine_Mat',
+	'Tum.Treg',
+	'Tum.Teff_PD1',
+	'Tum.D1_0',
+	'Tum.Teff_1_0',
+	'Tum.Teff_exhausted',
+	'Tum.DAMP',
+	'Tum.C1_PDL1',
+	'Tum.C1_PDL2'
+]
+
+# read all csv files in the folder
+output_folder = "$OUT_FOLDER/subject_1/sample_" + param_id + "/"
+df = pd.read_csv(os.path.join(output_folder, "QSP_0.csv"))
+df = df[species_to_keep]
+arr = np.expand_dims(df.to_numpy(), axis=0)
+# delete the folder
+os.system("rm -rf " + output_folder)
+
+np.savez_compressed("$OUT_FOLDER/subject_1/qsp_arr_" + param_id + ".npz", arr)
+EOF
+
 # === Step 4: Create run_simulation.sh script ===
 cat << EOF > "$WORK_DIR/run_simulation.sh"
 #!/bin/bash
@@ -90,7 +149,9 @@ PARAMS_FILE="$OUT_FOLDER/subject_1/sample_\${ID}/param_1_\${ID}_1.xml"
 OUT_FILE="$OUT_FOLDER/subject_1/sample_\${ID}"
 
 # run simulation
-\${EXEC} -p \${PARAMS_FILE} -o \${OUT_FILE} -t $RUNTIME -S -G $GRID_SAVE --grid-interval $GRID_INTERVAL
+\${EXEC} -p \${PARAMS_FILE} -o \${OUT_FILE} -t $RUNTIME -S -G $GRID_SAVE
+
+python save_results.py \${ID}
 
 EOF
 echo "Created run_simulation.sh script: $WORK_DIR/run_simulation.sh"
@@ -98,9 +159,11 @@ echo "Created run_simulation.sh script: $WORK_DIR/run_simulation.sh"
 # create script to run all simulations in a loop and time the whole thing
 cat << EOF > "$WORK_DIR/run_all_serial.sh"
 #!/bin/bash
+
 start=\$(date +%s)
 TASK_ID=\$1
 for i in \$(seq 1 $NUM_SIMS_PER_JOB); do
+    echo "Running simulation \$((\$TASK_ID * $NUM_SIMS_PER_JOB + \$i))"
     bash run_simulation.sh \$((\$TASK_ID * $NUM_SIMS_PER_JOB + \$i))
 done
 end=\$(date +%s)
@@ -129,6 +192,8 @@ cat << EOF > "$WORK_DIR/$SLURM_SCRIPT_NAME"
 echo "Running SLURM job \${SLURM_ARRAY_TASK_ID} on \$(hostname)"
 ID=\$SLURM_ARRAY_TASK_ID
 
+$VENV_ACTIVATE
+
 # run simulation
 bash run_all_serial.sh \${ID}
 
@@ -137,13 +202,38 @@ EOF
 chmod +x "$WORK_DIR/$SLURM_SCRIPT_NAME"
 echo "Created SLURM submission script: $WORK_DIR/$SLURM_SCRIPT_NAME"
 
+# # python script to read each csv file and combine them into one numpy array
+# cat << EOF > "$WORK_DIR/combine_results.py"
+# import numpy as np
+# import pandas as pd
+# import os
+
+# # read all csv files in the folder
+# output_folder = "$OUT_FOLDER/subject_1/"
+# sample_folders = [output_folder + "sample_" + str(idx) for idx in range(1, $TOTAL_SIMS + 1)]
+# arrs = []
+# for folder in sample_folders:
+#     df = pd.read_csv(os.path.join(folder, "QSP_0.csv"))
+#     arrs.append(np.expand_dims(df.to_numpy(), axis=0))
+#     # delete the folder
+#     os.system("rm -rf " + folder)
+
+# # combine all arrays
+# combined = np.concatenate(arrs, axis=0)
+# print("Combined shape:", combined.shape)
+# np.savez_compressed(output_folder + "combined.npz", combined)
+# EOF
+
+
+
+
 # === Step 5: Create postprocessing script ===
 cat << EOF > "$WORK_DIR/$POSTPROCESS_SCRIPT_NAME"
 #!/bin/bash
 echo "Postprocessing started" > $POSTPROCESS_LOG
-# gzip output folder
-cd $EXPERIMENTS_FOLDER
-tar -czvf $EXP_NAME.tar.gz $EXP_NAME
+# $VENV_ACTIVATE
+# python combine_results.py
+tar -czvf $EXPERIMENTS_FOLDER/$EXP_NAME.tar.gz $OUT_FOLDER
 echo "Postprocessing done" >> $POSTPROCESS_LOG
 EOF
 chmod +x "$WORK_DIR/$POSTPROCESS_SCRIPT_NAME"
@@ -197,6 +287,6 @@ if [ $TRANSFER_TO_HPC -eq 0 ]; then
     echo "Skipping transfer to HPC."
     exit 0
 fi
-scp -r $WORK_DIR joelne@greatlakes-xfer.arc-ts.umich.edu:repositories/SPQSP_IO/experiments
+scp -r $WORK_DIR joelne@greatlakes-xfer.arc-ts.umich.edu:repositories/SPQSP_IO/qsp_experiments
 
 echo "Folder $WORK_DIR transferred to HPC. Run the master script to start the workflow."

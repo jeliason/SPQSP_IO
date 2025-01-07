@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Param master='exact' sample='lhs' n='10'> 
+<Param master='exact' sample='lhs' n='10000'> 
   <ABM>
     <Environment>
       <SecPerSlice>21600</SecPerSlice>

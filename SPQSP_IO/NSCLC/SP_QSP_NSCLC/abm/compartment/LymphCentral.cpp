@@ -158,9 +158,9 @@ void LymphCentral::setup_param(LymphBloodParam& p){
 		std::cout << "after init: " << init_teff << "; " << init_texh << "; "
 			<< init_treg << "; " << init_APC << std::endl;
 		*/
-		std::cout << "init simulation simulation done" << std::endl;
-		std::cout << "vol_0: " << V_tumor_t0<< std::endl;
-		std::cout << "vol: " << V_tumor_t << std::endl;
+		// std::cout << "init simulation simulation done" << std::endl;
+		// std::cout << "vol_0: " << V_tumor_t0<< std::endl;
+		// std::cout << "vol: " << V_tumor_t << std::endl;
 
 		if (V_tumor_t >= V_tumor_t0)
 		{
