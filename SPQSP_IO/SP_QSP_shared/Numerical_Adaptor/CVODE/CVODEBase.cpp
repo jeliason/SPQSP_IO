@@ -249,8 +249,13 @@ void CVODEBase::setupCVODE(){
 		check_flag(&flag, "SUNLinSol_Dense", 1);
 
 		/* Call CVodeSetLinearSolver to attach the matrix and linear solver to CVode */
-		flag = CVodeSetLinearSolver(_cvode_mem, _LS, _A);
+		// flag = CVodeSetLinearSolver(_cvode_mem, _LS, _A);
+		// _LS = SUNLinSol_SPGMR(_y, SUN_PREC_NONE, 0, _sunctx);
+		// check_flag(&flag, "SUNLinSol_SPGMR", 1);
+		CVodeSetLinearSolver(_cvode_mem, _LS, _A);
 		check_flag(&flag, "CVodeSetLinearSolver", 1);
+
+		// CVodeSetPrintLevel(_cvode_mem, 1);
 
 	}
 	catch (std::string s){

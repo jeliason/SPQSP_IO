@@ -10,6 +10,7 @@
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
 #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
+#include <sunlinsol/sunlinsol_spgmr.h> // SPGMR solver
 #include <sundials/sundials_types.h>   /* defs. of sunrealtype, sunindextype      */
 
 

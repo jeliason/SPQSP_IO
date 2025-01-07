@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # === Configuration ===
-EXP_NAME="exp5"                # Folder to create
+EXP_NAME="hpc1"                # Folder to create
 # IMPORTANT TO CHANGE Params_batch.xml here! n in Params_batch.xml should match the ARRAY_SIZE slurm parameter below
-TRANSFER_TO_HPC=0              # Transfer the folder to the HPC (0 for no, 1 for yes)
-RUN_ON_HPC=0                    # Run the workflow on HPC (0 for no, 1 for yes) - configures variables accordingly
+TRANSFER_TO_HPC=1              # Transfer the folder to the HPC (0 for no, 1 for yes)
+RUN_ON_HPC=1                    # Run the workflow on HPC (0 for no, 1 for yes) - configures variables accordingly
 
 # === Model Configuration ===
 RUNTIME=1460                   # Simulation runtime
@@ -14,7 +14,8 @@ GRID_SAVE=1                    # Save grid (0 for none, 1 for cells only, 2 for 
 # === SLURM Configuration ===
 TIME="10:00"                # Expected runtime
 CPUS_PER_TASK=1                # Number of CPUs per task
-ARRAY_SIZE=10                  # Number of jobs in the array
+ARRAY_SIZE=2                  # Number of jobs in the array
+NUM_SIMS_PER_JOB=5            # Number of simulations per job (ARRAY_SIZE * NUM_SIMS_PER_JOB = total simulations to run, in Params_batch.xml)
 MEM="1G"                       # Memory per node
 
 
@@ -26,22 +27,21 @@ MASTER_SCRIPT_NAME="run_all.sh"
 SBATCH_LOG="job_output.log"
 PREPROCESS_LOG="preprocess.log"
 POSTPROCESS_LOG="postprocess.log"
-EXEC_NAME="nsclc_sim_multi"  # Executable name
-FILES_TO_COPY=("Params_batch.xml" "expBatchGen.py" "make_tensor.R") # Files to copy into the folder
+EXEC_NAME="nsclc_sim_qsp"  # Executable name
+FILES_TO_COPY=("Params_batch.xml" "expBatchGen.py") # Files to copy into the folder
+SRC_FOLDER="qsp_src"
 if [ $RUN_ON_HPC -eq 1 ]; then
     VENV_ACTIVATE="source ~/virtual_envs/physicell/bin/activate"
-    EXEC_FOLDER="../../SPQSP_IO/NSCLC/NSCLC_multi/hpc"  # Folder containing the executable
-    EXPERIMENTS_FOLDER="/nfs/turbo/umms-ukarvind/joelne/SPQSP_IO/experiments"
+    EXEC_FOLDER="../../SPQSP_IO/NSCLC/NSCLC_qsp/hpc"  # Folder containing the executable
+    EXPERIMENTS_FOLDER="/nfs/turbo/umms-ukarvind/joelne/SPQSP_IO/qsp_experiments"
     OUT_FOLDER="$EXPERIMENTS_FOLDER/$EXP_NAME"  # Output folder
-    WORK_DIR="experiments/$EXP_NAME"
 else
     VENV_ACTIVATE="mamba activate spqsp"
-    EXEC_FOLDER="../../SPQSP_IO/NSCLC/NSCLC_multi/macos"  # Folder containing the executable
-    EXPERIMENTS_FOLDER="experiments"
+    EXEC_FOLDER="../../SPQSP_IO/NSCLC/NSCLC_qsp/macos"  # Folder containing the executable
+    EXPERIMENTS_FOLDER="qsp_experiments"
     OUT_FOLDER="outputs"  # Output folder
-    WORK_DIR="experiments/$EXP_NAME"
 fi
-
+WORK_DIR="qsp_experiments/$EXP_NAME"
 
 # === Step 1: Create the folder ===
 # delete WORK_DIR if already exists
@@ -55,8 +55,8 @@ echo "Created folder: $WORK_DIR"
 # === Step 2: Copy files to the folder ===
 for file in "${FILES_TO_COPY[@]}"; do
     # echo $file
-    if [[ -f "dataset_src/$file" ]]; then
-        cp "dataset_src/$file" "$WORK_DIR/"
+    if [[ -f "$SRC_FOLDER/$file" ]]; then
+        cp "$SRC_FOLDER/$file" "$WORK_DIR/"
         echo "Copied $file to $WORK_DIR"
     else
         echo "Warning: $file does not exist, skipping."
@@ -92,8 +92,6 @@ OUT_FILE="$OUT_FOLDER/subject_1/sample_\${ID}"
 # run simulation
 \${EXEC} -p \${PARAMS_FILE} -o \${OUT_FILE} -t $RUNTIME -S -G $GRID_SAVE --grid-interval $GRID_INTERVAL
 
-# run make_tensor
-Rscript make_tensor.R $OUT_FOLDER/subject_1 \${ID}
 EOF
 echo "Created run_simulation.sh script: $WORK_DIR/run_simulation.sh"
 
@@ -101,12 +99,14 @@ echo "Created run_simulation.sh script: $WORK_DIR/run_simulation.sh"
 cat << EOF > "$WORK_DIR/run_all_serial.sh"
 #!/bin/bash
 start=\$(date +%s)
-for i in \$(seq 1 $ARRAY_SIZE); do
-    bash run_simulation.sh \$i
+TASK_ID=\$1
+for i in \$(seq 1 $NUM_SIMS_PER_JOB); do
+    bash run_simulation.sh \$((\$TASK_ID * $NUM_SIMS_PER_JOB + \$i))
 done
 end=\$(date +%s)
 echo "All simulations done. Time elapsed: \$((end-start)) seconds"
 EOF
+
 chmod +x "$WORK_DIR/run_simulation.sh"
 chmod +x "$WORK_DIR/run_all_serial.sh"
 
@@ -121,18 +121,16 @@ cat << EOF > "$WORK_DIR/$SLURM_SCRIPT_NAME"
 #SBATCH --partition=standard
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=$CPUS_PER_TASK
-#SBATCH --array=1-$ARRAY_SIZE  # Example: SLURM array with 10 jobs. Important that index starts from 1!
+#SBATCH --array=0-$((ARRAY_SIZE-1)) # 0-indexed now!
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mem=$MEM
 #SBATCH --mail-user=joelne@umich.edu
 
 echo "Running SLURM job \${SLURM_ARRAY_TASK_ID} on \$(hostname)"
 ID=\$SLURM_ARRAY_TASK_ID
-# load modules
-module load Rgeospatial
 
 # run simulation
-bash run_simulation.sh \${ID}
+bash run_all_serial.sh \${ID}
 
 echo "SLURM job \${SLURM_ARRAY_TASK_ID} done"
 EOF

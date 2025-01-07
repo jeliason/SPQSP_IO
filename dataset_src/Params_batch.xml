@@ -66,7 +66,7 @@
   </Molecular>
   <IC>
     <core>
-      <num_roi>1</num_roi>
+      <num_roi>0</num_roi>
       <stationary>1</stationary>
       <shiftgrid>0</shiftgrid>
       <density>
@@ -81,7 +81,7 @@
       </vas>
     </core>
     <margin>
-      <num_roi>1</num_roi>
+      <num_roi>0</num_roi>
       <fraction>.2</fraction>
       <fraction_res>.5</fraction_res>
       <zlim>12</zlim>

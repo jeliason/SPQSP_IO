@@ -1,7 +1,7 @@
 library(tidyverse)
 library(spatstat)
 
-prefix <- "exp1/vp/subject_1/sample_1/Outputs/"
+prefix <- "experiments/exp5/outputs/subject_1/sample_1/"
 path <- "snapShots/cell_margin_0_242.csv"
 
 df <- read_csv(paste0(prefix,path))
@@ -57,7 +57,7 @@ types_exclude <- c("PD1","PDL1")
 ps <- lapply(cpts,\(cpt) {
   p <- d2 %>%
     filter(compartment == cpt) %>%
-    filter(!str_detect(type, str_c(types_exclude, collapse = "|"))) %>%
+    # filter(!str_detect(type, str_c(types_exclude, collapse = "|"))) %>%
     ggplot(aes(time,value,color=type)) +
     geom_line() +
     # facet_wrap(~compartment,nrow=3) +
