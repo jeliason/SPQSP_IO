@@ -1,22 +1,22 @@
 #!/bin/bash
 
 # === Configuration ===
-EXP_NAME="hpc_10k_kd_pd1"                # Folder to create
+EXP_NAME="param4_10k"                # Folder to create
 # IMPORTANT TO CHANGE Params_batch.xml here! n in Params_batch.xml should match the ARRAY_SIZE * NUM_SIMS_PER_JOB slurm parameters below
 TRANSFER_TO_HPC=1              # Transfer the folder to the HPC (0 for no, 1 for yes)
 RUN_ON_HPC=1                    # Run the workflow on HPC (0 for no, 1 for yes) - configures variables accordingly
+PARAMS_FILE="multi_params_batch.xml"
 
 # === Model Configuration ===
 RUNTIME=1460                   # Simulation runtime
 GRID_SAVE=0
 
 # === SLURM Configuration ===
-TIME="45:00"                # Expected runtime
+TIME="10:00"                # Expected runtime
 CPUS_PER_TASK=1                # Number of CPUs per task
-ARRAY_SIZE=10                  # Number of jobs in the array
-NUM_SIMS_PER_JOB=1000            # Number of simulations per job (ARRAY_SIZE * NUM_SIMS_PER_JOB = total simulations to run, in Params_batch.xml)
+ARRAY_SIZE=100                  # Number of jobs in the array
+NUM_SIMS_PER_JOB=100            # Number of simulations per job (ARRAY_SIZE * NUM_SIMS_PER_JOB = total simulations to run, in Params_batch.xml)
 MEM="1G"                       # Memory per node
-
 
 # === Defaults (likely don't modify) ===
 PREPROCESS_SCRIPT_NAME="preprocess.sh"
@@ -27,7 +27,7 @@ SBATCH_LOG="job_output.log"
 PREPROCESS_LOG="preprocess.log"
 POSTPROCESS_LOG="postprocess.log"
 EXEC_NAME="nsclc_sim_qsp"  # Executable name
-FILES_TO_COPY=("Params_batch.xml" "expBatchGen.py") # Files to copy into the folder
+FILES_TO_COPY=("$PARAMS_FILE" "expBatchGen.py") # Files to copy into the folder
 SRC_FOLDER="qsp_src"
 TOTAL_SIMS=$((ARRAY_SIZE * NUM_SIMS_PER_JOB))
 if [ $RUN_ON_HPC -eq 1 ]; then
@@ -74,7 +74,7 @@ cd ../../../../$WORK_DIR
 mkdir -p $OUT_FOLDER
 
 $VENV_ACTIVATE
-python expBatchGen.py Params_batch.xml $OUT_FOLDER
+python expBatchGen.py $PARAMS_FILE $OUT_FOLDER
 
 echo "Preprocessing done" >> $PREPROCESS_LOG
 EOF
@@ -163,7 +163,7 @@ cat << EOF > "$WORK_DIR/run_all_serial.sh"
 start=\$(date +%s)
 TASK_ID=\$1
 for i in \$(seq 1 $NUM_SIMS_PER_JOB); do
-    echo "Running simulation \$((\$TASK_ID * $NUM_SIMS_PER_JOB + \$i))"
+    echo "Running job \$i on this node, corresponding to simulation \$((\$TASK_ID * $NUM_SIMS_PER_JOB + \$i))"
     bash run_simulation.sh \$((\$TASK_ID * $NUM_SIMS_PER_JOB + \$i))
 done
 end=\$(date +%s)
@@ -277,7 +277,7 @@ echo "Created master script: $WORK_DIR/$MASTER_SCRIPT_NAME"
 # === Step 7: Create script to copy gzipped results back to laptop ===
 cat << EOF > "$WORK_DIR/copy_results.sh"
 #!/bin/bash
-scp joelne@greatlakes-xfer.arc-ts.umich.edu:$EXPERIMENTS_FOLDER/$EXP_NAME.tar.gz .
+rsync -e --partial --progress joelne@greatlakes-xfer.arc-ts.umich.edu:$EXPERIMENTS_FOLDER/$EXP_NAME.tar.gz .
 EOF
 
 echo "Workflow setup complete. Folder $WORK_DIR is ready for transfer."
