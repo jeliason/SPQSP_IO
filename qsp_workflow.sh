@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # === Configuration ===
-EXP_NAME="param4_10k"                # Folder to create
+EXP_NAME="param3_10k"                # Folder to create
 # IMPORTANT TO CHANGE Params_batch.xml here! n in Params_batch.xml should match the ARRAY_SIZE * NUM_SIMS_PER_JOB slurm parameters below
 TRANSFER_TO_HPC=1              # Transfer the folder to the HPC (0 for no, 1 for yes)
 RUN_ON_HPC=1                    # Run the workflow on HPC (0 for no, 1 for yes) - configures variables accordingly
@@ -277,7 +277,7 @@ echo "Created master script: $WORK_DIR/$MASTER_SCRIPT_NAME"
 # === Step 7: Create script to copy gzipped results back to laptop ===
 cat << EOF > "$WORK_DIR/copy_results.sh"
 #!/bin/bash
-rsync -e --partial --progress joelne@greatlakes-xfer.arc-ts.umich.edu:$EXPERIMENTS_FOLDER/$EXP_NAME.tar.gz .
+rsync --partial --progress joelne@greatlakes-xfer.arc-ts.umich.edu:$EXPERIMENTS_FOLDER/$EXP_NAME.tar.gz .
 EOF
 
 echo "Workflow setup complete. Folder $WORK_DIR is ready for transfer."

@@ -13,3 +13,4 @@ experiments
 *.Rproj
 qsp_experiments
 nsclc_sim_qsp
+*prof
