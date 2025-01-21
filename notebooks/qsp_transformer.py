@@ -1,14 +1,19 @@
 import os
 # ensure the backend is set
-if "KERAS_BACKEND" not in os.environ:
-    # set this to "torch", "tensorflow", or "jax"
-    os.environ["KERAS_BACKEND"] = "jax"
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--backend", type=str, default="jax")
+parser.add_argument("--where", type=str, default="local")
+args = parser.parse_args()
+
+os.environ["KERAS_BACKEND"] = args.backend
+HPC_OR_LOCAL = args.where
 
 from dl_src.load_data import data_loader
 
 import bayesflow as bf
 
-train, validation, adapter, inference_variables = data_loader(HPC_OR_LOCAL="local")
+train, validation, adapter, inference_variables = data_loader(HPC_OR_LOCAL=HPC_OR_LOCAL)
 
 summary_net = bf.networks.TimeSeriesTransformer(summary_dim=32,
 																								time_axis=-1,
