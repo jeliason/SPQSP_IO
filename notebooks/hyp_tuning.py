@@ -17,6 +17,8 @@ import argparse
 
 import bayesflow as bf
 
+from dl_src.load_data import data_loader
+
 def objective(trial, epochs=100):
 		summary_dim = trial.suggest_int("summary_dim", 8, 64)
 		num_blocks = trial.suggest_int("num_blocks", 1, 4)

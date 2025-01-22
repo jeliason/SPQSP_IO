@@ -15,8 +15,6 @@ def data_loader(
 ):
 
 	# ------ Set parameters ------
-	HPC_OR_LOCAL = 'local'
-	# HPC_OR_LOCAL = 'hpc'
 	if HPC_OR_LOCAL == 'local':
 			parent_dir = './qsp_experiments/'
 			exp_dir = parent_dir + 'all_params_10k/outputs/subject_1/'
