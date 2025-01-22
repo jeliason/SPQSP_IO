@@ -1,26 +1,29 @@
 import os
 # ensure the backend is set
 import argparse
-import torch
+# import torch
 
 
 if __name__ == "__main__":
 
-	print("Is CUDA available?", torch.cuda.is_available())
-	print("CUDA Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No GPU detected")
-	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+	# print("Is CUDA available?", torch.cuda.is_available())
+	# print("CUDA Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No GPU detected")
+	# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 	# parser = argparse.ArgumentParser()
 	# parser.add_argument("--backend", type=str, default="jax")
 	# args = parser.parse_args()
-	os.environ["KERAS_BACKEND"] = "torch"
+	os.environ["KERAS_BACKEND"] = "tensorflow"
 
 	import bayesflow as bf
 	from dl_src.load_data import data_loader
 	from keras.src.backend.common import global_state
 
 	# print("Using backend:", args.backend)
-	global_state.set_global_attribute("torch_device", device)
+	# global_state.set_global_attribute("torch_device", device)
+
+	# keras.backend.set_device(device)  # Ensure Keras uses CUDA
+	# print("Keras backend is using:", keras.backend.device())
 
 
 	train, validation, adapter, inference_variables = data_loader()
