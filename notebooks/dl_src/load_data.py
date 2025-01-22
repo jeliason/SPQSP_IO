@@ -5,8 +5,8 @@ import bayesflow as bf
 
 def data_loader(
 		HPC_OR_LOCAL = 'local',
-		num_samples = 7500,
-		num_test_samples = 500,
+		num_samples = 500,
+		num_test_samples = 100,
 		thin = 4,
 		validation_ratio = 0.1,
 		sigma = 1e-2,
