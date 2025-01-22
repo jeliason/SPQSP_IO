@@ -1,17 +1,18 @@
 import os
 # ensure the backend is set
 import argparse
-from dl_src.load_data import data_loader
 
-import bayesflow as bf
 
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--backend", type=str, default="jax")
 	args = parser.parse_args()
-
 	os.environ["KERAS_BACKEND"] = args.backend
+	
+	import bayesflow as bf
+	from dl_src.load_data import data_loader
+
 
 	train, validation, adapter, inference_variables = data_loader()
 
