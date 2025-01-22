@@ -13,7 +13,7 @@ if __name__ == "__main__":
 	# parser = argparse.ArgumentParser()
 	# parser.add_argument("--backend", type=str, default="jax")
 	# args = parser.parse_args()
-	os.environ["KERAS_BACKEND"] = "tensorflow"
+	os.environ["KERAS_BACKEND"] = "torch"
 
 	import bayesflow as bf
 	from dl_src.load_data import data_loader
@@ -21,9 +21,6 @@ if __name__ == "__main__":
 
 	# print("Using backend:", args.backend)
 	# global_state.set_global_attribute("torch_device", device)
-
-	# keras.backend.set_device(device)  # Ensure Keras uses CUDA
-	# print("Keras backend is using:", keras.backend.device())
 
 
 	train, validation, adapter, inference_variables = data_loader()
@@ -44,4 +41,4 @@ if __name__ == "__main__":
 			inference_variables=inference_variables
 	)
 
-	history = workflow.fit_offline(train, epochs=100, batch_size=32, validation_data=validation)
+	history = workflow.fit_offline(train, epochs=1, batch_size=32, validation_data=validation)
