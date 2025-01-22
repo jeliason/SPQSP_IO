@@ -1,15 +1,18 @@
 import os
 # ensure the backend is set
 import argparse
+from keras.src.backend.common import global_state
 
 
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--backend", type=str, default="jax")
+	parser.add_argument("--device", type=str, default="cpu")
 	args = parser.parse_args()
 	os.environ["KERAS_BACKEND"] = args.backend
-	
+	global_state.set_global_attribute("torch_device", args.device)
+
 	import bayesflow as bf
 	from dl_src.load_data import data_loader
 
