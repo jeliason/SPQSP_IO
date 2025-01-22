@@ -15,6 +15,8 @@ if __name__ == "__main__":
 	from dl_src.load_data import data_loader
 	from keras.src.backend.common import global_state
 
+	print("Using backend:", args.backend)
+	print("Using device:", args.device)
 	global_state.set_global_attribute("torch_device", args.device)
 
 
