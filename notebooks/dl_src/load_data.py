@@ -4,18 +4,18 @@ import pandas as pd
 import bayesflow as bf
 
 def data_loader(
-		HPC_OR_LOCAL = 'local',
-		num_samples = 500,
-		num_test_samples = 100,
+		total_samples = 10000,
 		thin = 4,
 		validation_ratio = 0.1,
+		test_ratio = 0.1,
 		sigma = 1e-2,
-		n_time_points = 20,
+		n_time_points = 10,
 		species_idx = list(range(17))			
 ):
 
 	# ------ Set parameters ------
-	if HPC_OR_LOCAL == 'local':
+	HPC_OR_LOCAL = os.environ.get('SYSTEM_ENV')
+	if HPC_OR_LOCAL == 'laptop':
 			parent_dir = './qsp_experiments/'
 			exp_dir = parent_dir + 'all_params_10k/outputs/subject_1/'
 	else:
@@ -79,7 +79,11 @@ def data_loader(
 	qsp_files = [f for f in os.listdir(exp_dir) if f.endswith('.npz')]
 	# extract the qsp number from the file name
 	qsp_nums = [int(q.split('_')[2].split('.')[0])-1 for q in qsp_files]
-	total_samples = len(qsp_files)
+	total_files = len(qsp_files)
+	if total_samples > total_files:
+		total_samples = total_files
+	num_samples = int(total_samples * (1 - validation_ratio - test_ratio))
+	num_test_samples = int(total_samples * test_ratio)
 	total_idx = sorted(qsp_nums)
 	# total_idx = np.random.choice(qsp_nums, num_samples + num_test_samples,replace=False)
 	data_idx = total_idx[:num_samples]
@@ -88,7 +92,6 @@ def data_loader(
 	# get text_idx, but exclude the data_idx samples
 	qsp_paths = [os.path.join(exp_dir, 'qsp_arr_' + str(i + 1) + '.npz') for i in data_idx]
 
-	# def read_offline_data(obs_path, param_path, validation_ratio: float = 0.02):
 	observables = [np.load(path)['arr_0'] for path in qsp_paths]
 	observables = np.concatenate(observables, axis=0)
 
