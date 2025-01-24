@@ -4,6 +4,7 @@ import logging
 import sys
 import argparse
 import os
+import asyncio
 
 study_name = "study_loss_calerror"  # Unique identifier of the study.
 
@@ -100,7 +101,8 @@ def objective(trial, epochs=75):
 				epochs=epochs,
 				dataset=train_dataset,
 				validation_data=val_dataset,
-				verbose=1
+				verbose=1,
+				callbacks=[keras.callbacks.EarlyStopping(patience=5,monitor="val_loss")]
 				# callbacks=[KerasPruningCallback(trial, "val_loss", interval=10)]
 		)
 		loss = np.mean(history.history["val_loss"][-10:])
@@ -124,6 +126,14 @@ def objective(trial, epochs=75):
 
 
 if __name__ == "__main__":
+		parser = argparse.ArgumentParser()
+		parser.add_argument("--n_trials", type=int, default=100)
+
+		args = parser.parse_args()
+		n_trials = args.n_trials
+
+		optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+		storage_name = "sqlite:///{}.db".format(study_name)
 		# By default, we are relying on process based parallelism to run
 		# all trials on a single machine. However, with Dask client, we can easily scale up
 		# to Dask cluster spanning multiple physical workers. To learn how to setup and use
@@ -149,15 +159,6 @@ if __name__ == "__main__":
 			client = Client(cluster)
 		else:
 			client = None
-
-		parser = argparse.ArgumentParser()
-		parser.add_argument("--n_trials", type=int, default=100)
-
-		args = parser.parse_args()
-		n_trials = args.n_trials
-
-		optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
-		storage_name = "sqlite:///{}.db".format(study_name)
 
 		# Optuna-distributed just wraps standard Optuna study. The resulting object behaves
 		# just like regular study, but optimization process is asynchronous.
