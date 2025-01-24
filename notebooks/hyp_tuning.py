@@ -5,15 +5,16 @@ import sys
 import argparse
 import os
 
-def objective(trial, epochs=50):
+study_name = "study_loss_calerror"  # Unique identifier of the study.
+
+def objective(trial, epochs=75):
 		import os
 		# ensure the backend is set
 		if "KERAS_BACKEND" not in os.environ:
 				# set this to "torch", "tensorflow", or "jax"
 				os.environ["KERAS_BACKEND"] = "torch"
 		
-		from optuna.trial import TrialState
-		from optuna.integration import KerasPruningCallback
+		# from optuna.integration import KerasPruningCallback
 
 		import numpy as np
 		import torch
@@ -100,9 +101,26 @@ def objective(trial, epochs=50):
 				dataset=train_dataset,
 				validation_data=val_dataset,
 				verbose=1
-				# callbacks=[KerasPruningCallback(trial, "val_loss")]
+				# callbacks=[KerasPruningCallback(trial, "val_loss", interval=10)]
 		)
-		return np.mean(history.history["val_loss"][-10:])
+		loss = np.mean(history.history["val_loss"][-10:])
+
+		summaries = []
+		references = []
+		for i in range(val_dataset.num_batches):
+			batch = val_dataset[i]
+			summaries.append(batch["summary_variables"])
+			references.append(batch["inference_variables"])
+
+		summaries = torch.cat(summaries, dim=0)
+		references = torch.cat(references, dim=0)
+
+		targets = approximator._sample(num_samples=500,summary_variables=summaries)
+
+		cal_dict = bf.diagnostics.metrics.calibration_error(targets.numpy(),references.numpy())
+		cal_error = np.mean(cal_dict["values"])
+
+		return loss, cal_error
 
 
 if __name__ == "__main__":
@@ -139,7 +157,6 @@ if __name__ == "__main__":
 		n_trials = args.n_trials
 
 		optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
-		study_name = "example-study"  # Unique identifier of the study.
 		storage_name = "sqlite:///{}.db".format(study_name)
 
 		# Optuna-distributed just wraps standard Optuna study. The resulting object behaves
@@ -147,7 +164,8 @@ if __name__ == "__main__":
 
 		study = optuna_distributed.from_study(optuna.create_study(study_name=study_name,
 																														storage=storage_name,
-																														load_if_exists=True), client=client)
+																														load_if_exists=True,
+																														directions=["minimize","minimize"]), client=client)
 
 		# And let's continue with original Optuna example from here.
 		# Let us minimize the objective function above.

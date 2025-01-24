@@ -6,6 +6,8 @@ import torch
 import keras
 import numpy as np
 
+from pyprojroot import here
+
 
 
 class OfflineQSPDataset(keras.utils.PyDataset):
@@ -116,7 +118,8 @@ def data_loader(
 	# ------ Set parameters ------
 	HPC_OR_LOCAL = os.environ.get('SYSTEM_ENV')
 	if HPC_OR_LOCAL == 'laptop':
-			parent_dir = './qsp_experiments/'
+			proj_root = here()
+			parent_dir = os.path.join(proj_root,'qsp_experiments/')
 			exp_dir = parent_dir + 'all_params_10k/outputs/subject_1/'
 	else:
 			parent_dir = '/nfs/turbo/umms-ukarvind/joelne/SPQSP_IO/qsp_experiments/'
