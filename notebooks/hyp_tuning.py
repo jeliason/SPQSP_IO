@@ -121,11 +121,12 @@ if __name__ == "__main__":
 				account = "ukarvind0",
 				cores=1,
 				memory="16G",
-				walltime="30:00",
+				walltime="1:00:00",
 				job_script_prologue=job_script_prologue,
 				log_directory="logs",
+				worker_extra_args=["--lifetime", "55m", "--lifetime-stagger", "4m"],
 			)
-			cluster.adapt(minimum=1, maximum=10)  # Tells Dask to call `srun -n 1 ...` when it needs new workers
+			cluster.adapt(minimum=1, maximum=20)  # Tells Dask to call `srun -n 1 ...` when it needs new workers
 			from dask.distributed import Client
 			client = Client(cluster)
 		else:
