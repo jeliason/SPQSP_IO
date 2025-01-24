@@ -1,25 +1,42 @@
 import optuna
-
 import optuna_distributed
-from optuna.trial import TrialState
-from optuna.integration import KerasPruningCallback
-
-import numpy as np
+import logging
+import sys
+import argparse
 import os
 
-# ensure the backend is set
-if "KERAS_BACKEND" not in os.environ:
-		# set this to "torch", "tensorflow", or "jax"
-		os.environ["KERAS_BACKEND"] = "jax"
+def objective(trial, epochs=50):
+		
+		from optuna.trial import TrialState
+		from optuna.integration import KerasPruningCallback
 
-import keras
-import argparse
+		import numpy as np
+		import os
+		import torch
+		from keras.src.backend.common import global_state
 
-import bayesflow as bf
 
-from dl_src.load_data import data_loader
+		# ensure the backend is set
+		if "KERAS_BACKEND" not in os.environ:
+				# set this to "torch", "tensorflow", or "jax"
+				os.environ["KERAS_BACKEND"] = "torch"
 
-def objective(trial, epochs=100):
+		import keras
+
+		import bayesflow as bf
+
+		from dl_src.load_data import data_loader
+			
+
+		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		global_state.set_global_attribute("torch_device", device)
+		
+		# Load data
+		print("Loading data...")
+		train_dataset, val_dataset, _ = data_loader()
+		print("Data loaded.")
+
+
 		summary_dim = trial.suggest_int("summary_dim", 8, 64)
 		num_blocks = trial.suggest_int("num_blocks", 1, 4)
 		num_heads = (trial.suggest_int("num_heads", 2, 6),) * num_blocks
@@ -36,7 +53,7 @@ def objective(trial, epochs=100):
 			num_heads=num_heads,
 			mlp_depths=mlp_depths,
 			mlp_widths=mlp_widths,
-			summary_dropout=summary_dropout,
+			dropout=summary_dropout,
 			time_axis=-1,
 			time_embedding=time_embedding,
 			time_embed_dim=time_embed_dim
@@ -48,13 +65,18 @@ def objective(trial, epochs=100):
 		inf_dropout = trial.suggest_float("dropout", 0.01, 0.5)
 		initial_learning_rate = trial.suggest_float("lr", 1e-4, 1e-3)
 		residual = trial.suggest_categorical("residual", [True, False])
-		spectral_normalization = trial.suggest_categorical("spectral_normalization", [True, False])
+		# spectral_normalization = trial.suggest_categorical("spectral_normalization", [True, False])
 		
 		# Create inference net
-		sigma2 = keras.ops.var(train_samples["parameters"].astype("float32"), axis=0, keepdims=True)
+		sigma2 = 1
 		inference_network = bf.networks.ContinuousConsistencyModel(
-				subnet_kwargs={"widths": (inf_width,)*inf_depth, "dropout": inf_dropout, "residual": residual, "spectral_normalization": spectral_normalization},
-				sigma2=sigma2
+				subnet_kwargs={
+					"widths": (inf_width,)*inf_depth,
+				 "dropout": inf_dropout, 
+				 "residual": residual
+				#  "spectral_normalization": spectral_normalization
+				},
+				sigma_data=sigma2
 		)
 		
 		# Create optimizer
@@ -70,17 +92,17 @@ def objective(trial, epochs=100):
 		approximator = bf.ContinuousApproximator(
 			summary_network=summary_net,
 			inference_network=inference_network,
-			adapter=adapter,
+			adapter=None
 		)
 		approximator.compile(optimizer=optimizer)
 		
-		# Train and compute the average of last 5 validation losses
+		# Train and compute the average of last 10 validation losses
 		history = approximator.fit(
 				epochs=epochs,
 				dataset=train_dataset,
 				validation_data=val_dataset,
-				verbose=0,
-				callbacks=[KerasPruningCallback(trial, "val_loss")]
+				verbose=1
+				# callbacks=[KerasPruningCallback(trial, "val_loss")]
 		)
 		return np.mean(history.history["val_loss"][-10:])
 
@@ -90,28 +112,43 @@ if __name__ == "__main__":
 		# all trials on a single machine. However, with Dask client, we can easily scale up
 		# to Dask cluster spanning multiple physical workers. To learn how to setup and use
 		# Dask cluster, please refer to https://docs.dask.org/en/stable/deploying.html.
-		from dask_jobqueue.slurm import SLURMCluster
-		cluster = SLURMCluster(
-			account = "ukarvind0",
-			cores=1,
-			memory="16G"
-		)
-		cluster.adapt(minimum=1, maximum=10)  # Tells Dask to call `srun -n 1 ...` when it needs new workers
-		from dask.distributed import Client
-		client = Client(cluster)
-		client = None
+		SYSTEM_ENV = os.environ.get('SYSTEM_ENV')
+		if SYSTEM_ENV == "HPC":
+			from dask_jobqueue.slurm import SLURMCluster
+			job_script_prologue = ['source virtual_envs/bayesflow/bin/activate']
+			cluster = SLURMCluster(
+				account = "ukarvind0",
+				cores=1,
+				memory="16G",
+				walltime="30:00",
+				job_script_prologue=job_script_prologue
+			)
+			cluster.adapt(minimum=1, maximum=10)  # Tells Dask to call `srun -n 1 ...` when it needs new workers
+			from dask.distributed import Client
+			client = Client(cluster)
+		else:
+			client = None
 
 		parser = argparse.ArgumentParser()
-		parser.add_argument("--n-trials", type=int, default=100)
+		parser.add_argument("--n_trials", type=int, default=100)
 
 		args = parser.parse_args()
 		n_trials = args.n_trials
 
+		optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+		study_name = "example-study"  # Unique identifier of the study.
+		storage_name = "sqlite:///{}.db".format(study_name)
+
 		# Optuna-distributed just wraps standard Optuna study. The resulting object behaves
 		# just like regular study, but optimization process is asynchronous.
-		study = optuna_distributed.from_study(optuna.create_study(), client=client)
+
+		study = optuna_distributed.from_study(optuna.create_study(study_name=study_name,
+																														storage=storage_name,
+																														load_if_exists=True), client=client)
 
 		# And let's continue with original Optuna example from here.
 		# Let us minimize the objective function above.
+		# objective = partial(objective, epochs=1)
+
 		print(f"Running {n_trials} trials...")
-		study.optimize(objective, n_trials=n_trials)
+		study.optimize(objective, n_trials=n_trials, n_jobs=1)
