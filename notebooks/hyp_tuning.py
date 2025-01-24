@@ -114,7 +114,7 @@ if __name__ == "__main__":
 		if SYSTEM_ENV == "HPC":
 			from dask_jobqueue.slurm import SLURMCluster
 			job_script_prologue = ['source ~/virtual_envs/bayesflow/bin/activate',
-													'cd ~/repositories/SPQSP_IO',
+													'cd ~/repositories/SPQSP_IO/notebooks',
 													'echo "Activated Virtual Environment: $VIRTUAL_ENV"',
 													'echo "Current Working Directory: $(pwd)"']
 			cluster = SLURMCluster(
