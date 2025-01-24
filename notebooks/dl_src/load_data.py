@@ -2,12 +2,10 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
 
 import keras
 import numpy as np
 
-from bayesflow.adapters import Adapter
 
 
 class OfflineQSPDataset(keras.utils.PyDataset):
@@ -103,75 +101,6 @@ class OfflineQSPDataset(keras.utils.PyDataset):
 		def shuffle(self) -> None:
 				"""Shuffle the dataset in-place."""
 				np.random.shuffle(self.indices)
-
-class QSPDataset(Dataset):
-		def __init__(self, data,  params_df, thin=4, species_idx=list(range(17)), n_bins=10, sigma=1e-2):
-				"""
-				Args:
-						data (array-like or tensor): The dataset features.
-						labels (array-like or tensor): The dataset labels.
-						transform (callable, optional): A function/transform to apply to the data.
-				"""
-				self.data = torch.tensor(data, dtype=torch.float32)
-
-				# create time array
-				time_linsp = np.linspace(0, 1, data.shape[1])
-				self.time = torch.tensor(np.tile(time_linsp, (data.shape[0], 1,1)).transpose((0,2,1)).astype(np.float32))
-
-				# get parameters
-				param_names = list(params_df.columns)
-				params = params_df.to_numpy()
-				self.inference_variables = param_names[9:]
-				params_idx = [param_names.index(var) for var in self.inference_variables]
-				self.params = torch.tensor(np.array([params[:,i] for i in params_idx]).astype(np.float32).T)
-
-				# extract measured species
-				self.data = self.data[:,:,species_idx]
-
-				# pre-thin data
-				self.data = self.data[:,::thin,:]
-
-				# log1p transform data and params
-				self.data = torch.log1p(self.data)
-				self.params = torch.log1p(self.params)
-
-				# standardize params
-				self.params_mean = torch.mean(self.params)
-				self.params_std = torch.std(self.params)
-				self.params = (self.params - self.params_mean) / self.params_std
-
-				# create subsampling bins
-				total_time_points = self.data.shape[1]
-				bins = np.linspace(0, total_time_points, n_bins + 1)
-				self.subsamp_bins = [int(i) for i in bins]
-
-				# sigma for noise
-				self.sigma = sigma
-
-		def __len__(self):
-				return len(self.data)
-
-		def __getitem__(self, idx):
-				sample = self.data[idx]
-				time = self.time[idx]
-				label = self.params[idx]
-
-				# subsample
-				random_idx = np.random.randint(self.subsamp_bins[:-1], self.subsamp_bins[1:])
-				sample = sample[random_idx,:]
-				time = time[random_idx,:]
-
-				# standardize data
-				sample = (sample - torch.mean(sample)) / torch.std(sample)
-
-				# create torch normal noise
-				noise = torch.normal(0, self.sigma, sample.shape)
-				sample += noise
-				sample[sample <= 0] = torch.abs(noise[sample <= 0])
-
-				# concatenate time
-				sample = torch.cat([sample, time], axis=-1)
-				return sample, label
 
 
 def data_loader(

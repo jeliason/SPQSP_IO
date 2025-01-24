@@ -1,28 +1,20 @@
 import os
+os.environ["KERAS_BACKEND"] = "torch"
+import time
+
+import bayesflow as bf
+from dl_src.load_data import data_loader
+from keras.src.backend.common import global_state
 # ensure the backend is set
-import argparse
 import torch
 import keras
-from torch.utils.data import DataLoader
 
 
 if __name__ == "__main__":
 
-	# print("Is CUDA available?", torch.cuda.is_available())
-	# print("CUDA Device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No GPU detected")
-	# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-	# parser = argparse.ArgumentParser()
-	# parser.add_argument("--backend", type=str, default="jax")
-	# args = parser.parse_args()
-	os.environ["KERAS_BACKEND"] = "torch"
-
-	import bayesflow as bf
-	from dl_src.load_data import data_loader
-	from keras.src.backend.common import global_state
-
-	# print("Using backend:", args.backend)
-	# global_state.set_global_attribute("torch_device", device)
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+	global_state.set_global_attribute("torch_device", device)
+	keras.mixed_precision.set_global_policy("mixed_bfloat16")
 
 
 	train, validation, _ = data_loader()
@@ -43,9 +35,8 @@ if __name__ == "__main__":
 	# 		inference_variables=train.inference_variables
 	# )
 
-	# get num_batches from train_loader
 	initial_learning_rate = 1e-3
-	epochs = 10
+	epochs = 1
 	    # Create optimizer
 	scheduled_lr = keras.optimizers.schedules.CosineDecay(
 			initial_learning_rate=initial_learning_rate,
@@ -63,17 +54,19 @@ if __name__ == "__main__":
 	)
 	approximator.compile(optimizer=optimizer)
 	
-		# Profile training step
-	with torch.profiler.profile(
-		activities=[torch.profiler.ProfilerActivity.CPU],
-		record_shapes=True,
-		profile_memory=True,
-		with_stack=True
-	) as prof:
-		# Train and compute the average of last 5 validation losses
-		history = approximator.fit(
-				epochs=epochs,
-				dataset=train,
-				validation_data=validation
-		)
-	print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+	# 	# Profile training step
+	# with torch.profiler.profile(
+	# 	activities=[torch.profiler.ProfilerActivity.CPU],
+	# 	record_shapes=True,
+	# 	profile_memory=True,
+	# 	with_stack=True
+	# ) as prof:
+	start_time = time.time()
+	history = approximator.fit(
+			epochs=epochs,
+			dataset=train,
+			validation_data=validation,
+			verbose=0
+	)
+	print("Training time: ", time.time() - start_time)
+	# print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
