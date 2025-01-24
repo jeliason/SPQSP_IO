@@ -114,14 +114,16 @@ if __name__ == "__main__":
 		if SYSTEM_ENV == "HPC":
 			from dask_jobqueue.slurm import SLURMCluster
 			job_script_prologue = ['source ~/virtual_envs/bayesflow/bin/activate',
-													'cd ~/repositories/SPQSP_IO']
+													'cd ~/repositories/SPQSP_IO',
+													'echo "Activated Virtual Environment: $VIRTUAL_ENV"',
+													'echo "Current Working Directory: $(pwd)"']
 			cluster = SLURMCluster(
 				account = "ukarvind0",
 				cores=1,
 				memory="16G",
 				walltime="30:00",
 				job_script_prologue=job_script_prologue,
-				log_directory="~/repositories/SPQSP_IO/logs",
+				log_directory="logs",
 			)
 			cluster.adapt(minimum=1, maximum=10)  # Tells Dask to call `srun -n 1 ...` when it needs new workers
 			from dask.distributed import Client
