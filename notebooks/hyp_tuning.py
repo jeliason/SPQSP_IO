@@ -6,20 +6,18 @@ import argparse
 import os
 
 def objective(trial, epochs=50):
+		import os
+		# ensure the backend is set
+		if "KERAS_BACKEND" not in os.environ:
+				# set this to "torch", "tensorflow", or "jax"
+				os.environ["KERAS_BACKEND"] = "torch"
 		
 		from optuna.trial import TrialState
 		from optuna.integration import KerasPruningCallback
 
 		import numpy as np
-		import os
 		import torch
 		from keras.src.backend.common import global_state
-
-
-		# ensure the backend is set
-		if "KERAS_BACKEND" not in os.environ:
-				# set this to "torch", "tensorflow", or "jax"
-				os.environ["KERAS_BACKEND"] = "torch"
 
 		import keras
 
@@ -115,13 +113,15 @@ if __name__ == "__main__":
 		SYSTEM_ENV = os.environ.get('SYSTEM_ENV')
 		if SYSTEM_ENV == "HPC":
 			from dask_jobqueue.slurm import SLURMCluster
-			job_script_prologue = ['source virtual_envs/bayesflow/bin/activate']
+			job_script_prologue = ['source ~/virtual_envs/bayesflow/bin/activate',
+													'cd ~/repositories/SPQSP_IO']
 			cluster = SLURMCluster(
 				account = "ukarvind0",
 				cores=1,
 				memory="16G",
 				walltime="30:00",
-				job_script_prologue=job_script_prologue
+				job_script_prologue=job_script_prologue,
+				log_directory="~/repositories/SPQSP_IO/logs",
 			)
 			cluster.adapt(minimum=1, maximum=10)  # Tells Dask to call `srun -n 1 ...` when it needs new workers
 			from dask.distributed import Client
