@@ -175,8 +175,7 @@ if __name__ == "__main__":
 
 
 		study = optuna.load_study(study_name=study_name,
-																												storage=storage,
-																												directions=["minimize","minimize"])
+																												storage=storage)
 
 		# And let's continue with original Optuna example from here.
 		# Let us minimize the objective function above.
