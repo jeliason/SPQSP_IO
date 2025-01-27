@@ -169,9 +169,8 @@ if __name__ == "__main__":
 		# 																												load_if_exists=True,
 		# 																												directions=["minimize","minimize"]), client=client)
 
-		study = optuna.create_study(study_name=study_name,
+		study = optuna.load_study(study_name=study_name,
 																												storage=storage_name,
-																												load_if_exists=True,
 																												directions=["minimize","minimize"])
 
 		# And let's continue with original Optuna example from here.
@@ -179,4 +178,4 @@ if __name__ == "__main__":
 		# objective = partial(objective, epochs=1)
 
 		# print(f"Running {n_trials} trials...")
-		study.optimize(objective, n_trials=1)
+		study.optimize(objective, n_trials=10)
