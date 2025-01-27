@@ -5,6 +5,9 @@ import sys
 # import argparse
 # import os
 # import asyncio
+from optuna.storages import JournalStorage
+from optuna.storages.journal import JournalFileBackend
+
 
 study_name = "study_loss_calerror_2"  # Unique identifier of the study.
 index_cal_error = [0,1,3,9,10,11,12]
@@ -134,7 +137,7 @@ if __name__ == "__main__":
 		# n_trials = args.n_trials
 
 		optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
-		storage_name = "sqlite:///{}.db".format(study_name)
+		# storage_name = "sqlite:///{}.db".format(study_name)
 		# By default, we are relying on process based parallelism to run
 		# all trials on a single machine. However, with Dask client, we can easily scale up
 		# to Dask cluster spanning multiple physical workers. To learn how to setup and use
@@ -168,9 +171,11 @@ if __name__ == "__main__":
 		# 																												storage=storage_name,
 		# 																												load_if_exists=True,
 		# 																												directions=["minimize","minimize"]), client=client)
+		storage = JournalStorage(JournalFileBackend(f"{study_name}.log"))
+
 
 		study = optuna.load_study(study_name=study_name,
-																												storage=storage_name,
+																												storage=storage,
 																												directions=["minimize","minimize"])
 
 		# And let's continue with original Optuna example from here.
