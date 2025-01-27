@@ -44,8 +44,8 @@ class OfflineQSPDataset(keras.utils.PyDataset):
 				self.params = torch.log1p(self.params)
 
 				# standardize params
-				self.params_mean = torch.mean(self.params)
-				self.params_std = torch.std(self.params)
+				self.params_mean = torch.mean(self.params, axis=0)
+				self.params_std = torch.std(self.params, axis=0)
 				self.params = (self.params - self.params_mean) / self.params_std
 
 				# create subsampling bins

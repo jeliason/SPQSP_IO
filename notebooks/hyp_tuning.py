@@ -1,12 +1,13 @@
 import optuna
-import optuna_distributed
+# import optuna_distributed
 import logging
 import sys
-import argparse
-import os
-import asyncio
+# import argparse
+# import os
+# import asyncio
 
-study_name = "study_loss_calerror"  # Unique identifier of the study.
+study_name = "study_loss_calerror_2"  # Unique identifier of the study.
+index_cal_error = [0,1,3,9,10,11,12]
 
 def objective(trial, epochs=75):
 		import os
@@ -37,15 +38,15 @@ def objective(trial, epochs=75):
 		print("Data loaded.")
 
 
-		summary_dim = trial.suggest_int("summary_dim", 8, 64)
+		summary_dim = trial.suggest_int("summary_dim", 32, 256)
 		num_blocks = trial.suggest_int("num_blocks", 1, 4)
-		num_heads = (trial.suggest_int("num_heads", 2, 6),) * num_blocks
+		num_heads = (trial.suggest_int("num_heads", 4, 8),) * num_blocks
 		embed_dims = (trial.suggest_int("embed_dims", 8, 128),) * num_blocks
 		mlp_depths = (trial.suggest_int("mlp_depths", 1, 4),) * num_blocks
 		mlp_widths = (trial.suggest_int("mlp_widths", 16, 256),) * num_blocks
 		summary_dropout = trial.suggest_float("mlp_dropout", 0.01, 0.5)
 		time_embedding = trial.suggest_categorical("time_embedding", ["time2vec", "lstm", "gru"])
-		time_embed_dim = trial.suggest_int("time_embed_dim", 4,16)
+		time_embed_dim = trial.suggest_int("time_embed_dim", 8,32)
 
 		summary_net = bf.networks.TimeSeriesTransformer(
 			summary_dim=summary_dim,
@@ -102,7 +103,7 @@ def objective(trial, epochs=75):
 				dataset=train_dataset,
 				validation_data=val_dataset,
 				verbose=1,
-				callbacks=[keras.callbacks.EarlyStopping(patience=5,monitor="val_loss")]
+				callbacks=[keras.callbacks.EarlyStopping(patience=10,monitor="val_loss")]
 				# callbacks=[KerasPruningCallback(trial, "val_loss", interval=10)]
 		)
 		loss = np.mean(history.history["val_loss"][-10:])
@@ -120,17 +121,17 @@ def objective(trial, epochs=75):
 		targets = approximator._sample(num_samples=500,summary_variables=summaries)
 
 		cal_dict = bf.diagnostics.metrics.calibration_error(targets.numpy(),references.numpy())
-		cal_error = np.mean(cal_dict["values"])
+		cal_error = np.mean(cal_dict["values"][index_cal_error])
 
 		return loss, cal_error
 
 
 if __name__ == "__main__":
-		parser = argparse.ArgumentParser()
-		parser.add_argument("--n_trials", type=int, default=100)
+		# parser = argparse.ArgumentParser()
+		# parser.add_argument("--n_trials", type=int, default=100)
 
-		args = parser.parse_args()
-		n_trials = args.n_trials
+		# args = parser.parse_args()
+		# n_trials = args.n_trials
 
 		optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 		storage_name = "sqlite:///{}.db".format(study_name)
@@ -138,39 +139,44 @@ if __name__ == "__main__":
 		# all trials on a single machine. However, with Dask client, we can easily scale up
 		# to Dask cluster spanning multiple physical workers. To learn how to setup and use
 		# Dask cluster, please refer to https://docs.dask.org/en/stable/deploying.html.
-		SYSTEM_ENV = os.environ.get('SYSTEM_ENV')
-		if SYSTEM_ENV == "HPC":
-			from dask_jobqueue.slurm import SLURMCluster
-			job_script_prologue = ['source ~/virtual_envs/bayesflow/bin/activate',
-													'cd ~/repositories/SPQSP_IO/notebooks',
-													'echo "Activated Virtual Environment: $VIRTUAL_ENV"',
-													'echo "Current Working Directory: $(pwd)"']
-			cluster = SLURMCluster(
-				account = "ukarvind0",
-				cores=1,
-				memory="16G",
-				walltime="1:00:00",
-				job_script_prologue=job_script_prologue,
-				log_directory="logs",
-				worker_extra_args=["--lifetime", "55m", "--lifetime-stagger", "4m"],
-			)
-			cluster.adapt(minimum=1, maximum=20)  # Tells Dask to call `srun -n 1 ...` when it needs new workers
-			from dask.distributed import Client
-			client = Client(cluster)
-		else:
-			client = None
+		# SYSTEM_ENV = os.environ.get('SYSTEM_ENV')
+		# if SYSTEM_ENV == "HPC":
+		# 	from dask_jobqueue.slurm import SLURMCluster
+		# 	job_script_prologue = ['source ~/virtual_envs/bayesflow/bin/activate',
+		# 											'cd ~/repositories/SPQSP_IO/notebooks',
+		# 											'echo "Activated Virtual Environment: $VIRTUAL_ENV"',
+		# 											'echo "Current Working Directory: $(pwd)"']
+		# 	cluster = SLURMCluster(
+		# 		account = "ukarvind0",
+		# 		cores=1,
+		# 		memory="16G",
+		# 		walltime="1:00:00",
+		# 		job_script_prologue=job_script_prologue,
+		# 		log_directory="logs",
+		# 		worker_extra_args=["--lifetime", "55m", "--lifetime-stagger", "4m"],
+		# 	)
+		# 	cluster.adapt(minimum=1, maximum=20)  # Tells Dask to call `srun -n 1 ...` when it needs new workers
+		# 	from dask.distributed import Client
+		# 	client = Client(cluster)
+		# else:
+		# 	client = None
 
 		# Optuna-distributed just wraps standard Optuna study. The resulting object behaves
 		# just like regular study, but optimization process is asynchronous.
 
-		study = optuna_distributed.from_study(optuna.create_study(study_name=study_name,
-																														storage=storage_name,
-																														load_if_exists=True,
-																														directions=["minimize","minimize"]), client=client)
+		# study = optuna_distributed.from_study(optuna.create_study(study_name=study_name,
+		# 																												storage=storage_name,
+		# 																												load_if_exists=True,
+		# 																												directions=["minimize","minimize"]), client=client)
+
+		study = optuna.create_study(study_name=study_name,
+																												storage=storage_name,
+																												load_if_exists=True,
+																												directions=["minimize","minimize"])
 
 		# And let's continue with original Optuna example from here.
 		# Let us minimize the objective function above.
 		# objective = partial(objective, epochs=1)
 
-		print(f"Running {n_trials} trials...")
-		study.optimize(objective, n_trials=n_trials, n_jobs=1)
+		# print(f"Running {n_trials} trials...")
+		study.optimize(objective, n_trials=1)
