@@ -2,7 +2,7 @@ import optuna
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
 
-study_name = "study_rmse_calerror"  # Unique identifier of the study.
+study_name = "study_rmse_calerror_2"  # Unique identifier of the study.
 
 storage = JournalStorage(JournalFileBackend(f"{study_name}.log"))
 

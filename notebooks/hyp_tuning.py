@@ -26,10 +26,10 @@ import bayesflow as bf
 from dl_src.load_data import data_loader
 
 
-study_name = "study_rmse_calerror"  # Unique identifier of the study.
+study_name = "study_rmse_calerror_2"  # Unique identifier of the study.
 # index_cal_error = [0,1,3,9,10,11,12]
 
-def objective(trial, epochs=75):
+def objective(trial, epochs=60):
 
 		summary_dim = trial.suggest_int("summary_dim", 32, 256)
 		num_blocks = trial.suggest_int("num_blocks", 1, 4)
@@ -54,23 +54,33 @@ def objective(trial, epochs=75):
 		)
 		
 		# Optimize hyperparameters
-		inf_width = trial.suggest_int("width", 128, 512)
+		inf_width = trial.suggest_int("width", 32, 512)
 		inf_depth = trial.suggest_int("depth", 2, 8)
 		inf_dropout = trial.suggest_float("dropout", 0.01, 0.5)
 		initial_learning_rate = trial.suggest_float("lr", 1e-4, 1e-3)
 		residual = trial.suggest_categorical("residual", [True, False])
+		integrator = trial.suggest_categorical("integrator", ["euler", "rk2", "rk4"])
 		# spectral_normalization = trial.suggest_categorical("spectral_normalization", [True, False])
 		
 		# Create inference net
-		sigma2 = 1
-		inference_network = bf.networks.ContinuousConsistencyModel(
+		# sigma2 = 1
+		# inference_network = bf.networks.ContinuousConsistencyModel(
+		# 		subnet_kwargs={
+		# 			"widths": (inf_width,)*inf_depth,
+		# 		 "dropout": inf_dropout, 
+		# 		 "residual": residual
+		# 		#  "spectral_normalization": spectral_normalization
+		# 		},
+		# 		sigma_data=sigma2
+		# )
+
+		inference_network = bf.networks.FlowMatching(
 				subnet_kwargs={
 					"widths": (inf_width,)*inf_depth,
 				 "dropout": inf_dropout, 
 				 "residual": residual
-				#  "spectral_normalization": spectral_normalization
 				},
-				sigma_data=sigma2
+				integrator=integrator
 		)
 		
 		# Create optimizer
@@ -95,8 +105,8 @@ def objective(trial, epochs=75):
 				epochs=epochs,
 				dataset=train_dataset,
 				validation_data=val_dataset,
-				verbose=1,
-				callbacks=[keras.callbacks.EarlyStopping(patience=10,monitor="val_loss")]
+				verbose=1
+				# callbacks=[keras.callbacks.EarlyStopping(patience=10,monitor="val_loss")]
 				# callbacks=[KerasPruningCallback(trial, "val_loss", interval=10)]
 		)
 		loss = np.mean(history.history["val_loss"][-10:])
