@@ -30,6 +30,7 @@ class OfflineQSPDataset(keras.utils.PyDataset):
 				param_names = list(params_df.columns)
 				params = params_df.to_numpy()
 				self.inference_variables = param_names[9:]
+				self.inference_variables = [self.inference_variables[i] for i in [6,7,8,10,11,12,13]]
 				params_idx = [param_names.index(var) for var in self.inference_variables]
 				self.params = torch.tensor(np.array([params[:,i] for i in params_idx]).astype(np.float32).T)
 

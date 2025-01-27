@@ -16,3 +16,4 @@ nsclc_sim_qsp
 *prof
 *pyc
 *.db
+*.log

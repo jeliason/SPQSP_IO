@@ -7,39 +7,29 @@ import sys
 # import asyncio
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
+import os
+# ensure the backend is set
+if "KERAS_BACKEND" not in os.environ:
+		# set this to "torch", "tensorflow", or "jax"
+		os.environ["KERAS_BACKEND"] = "torch"
+
+# from optuna.integration import KerasPruningCallback
+
+import numpy as np
+import torch
+from keras.src.backend.common import global_state
+
+import keras
+
+import bayesflow as bf
+
+from dl_src.load_data import data_loader
 
 
-study_name = "study_loss_calerror_2"  # Unique identifier of the study.
-index_cal_error = [0,1,3,9,10,11,12]
+study_name = "study_rmse_calerror"  # Unique identifier of the study.
+# index_cal_error = [0,1,3,9,10,11,12]
 
 def objective(trial, epochs=75):
-		import os
-		# ensure the backend is set
-		if "KERAS_BACKEND" not in os.environ:
-				# set this to "torch", "tensorflow", or "jax"
-				os.environ["KERAS_BACKEND"] = "torch"
-		
-		# from optuna.integration import KerasPruningCallback
-
-		import numpy as np
-		import torch
-		from keras.src.backend.common import global_state
-
-		import keras
-
-		import bayesflow as bf
-
-		from dl_src.load_data import data_loader
-			
-
-		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-		global_state.set_global_attribute("torch_device", device)
-		
-		# Load data
-		print("Loading data...")
-		train_dataset, val_dataset, _ = data_loader()
-		print("Data loaded.")
-
 
 		summary_dim = trial.suggest_int("summary_dim", 32, 256)
 		num_blocks = trial.suggest_int("num_blocks", 1, 4)
@@ -124,9 +114,12 @@ def objective(trial, epochs=75):
 		targets = approximator._sample(num_samples=500,summary_variables=summaries)
 
 		cal_dict = bf.diagnostics.metrics.calibration_error(targets.numpy(),references.numpy())
-		cal_error = np.mean(cal_dict["values"][index_cal_error])
+		cal_error = np.mean(cal_dict["values"])
 
-		return loss, cal_error
+		rmse_dict = bf.diagnostics.metrics.root_mean_squared_error(targets.numpy(),references.numpy())
+		rmse = np.mean(rmse_dict["values"])
+
+		return rmse, cal_error
 
 
 if __name__ == "__main__":
@@ -135,6 +128,14 @@ if __name__ == "__main__":
 
 		# args = parser.parse_args()
 		# n_trials = args.n_trials
+
+		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		global_state.set_global_attribute("torch_device", device)
+		
+		# Load data
+		print("Loading data...")
+		train_dataset, val_dataset, _ = data_loader()
+		print("Data loaded.")
 
 		optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 		# storage_name = "sqlite:///{}.db".format(study_name)
